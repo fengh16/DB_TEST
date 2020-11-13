@@ -3,7 +3,7 @@ export default {
     return {
       status: 200,
       result: '登录成功',
-      usertype: '普通用户'
+      usertype: '管理员'
     }
   }
 }

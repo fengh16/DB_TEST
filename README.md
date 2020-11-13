@@ -1,30 +1,23 @@
-# vue
+# DB_TEST
 
-> A Vue.js project
+前端部分，使用vue构建。
 
-## Build Setup
+使用方法：
 
-``` bash
-# install dependencies
-npm install
+- npm install
+- npm run dev
 
-# serve with hot reload at localhost:8080
-npm run dev
+## 整体架构
 
-# build for production with minification
-npm run build
+- App.vue: 整体框架，在pages中的内容会替换其中的<router-view/>
+- router/index.js: 路由文件，将网址与具体的页面内容关联
+- global_var.js: 一些全局变量，可以在pages/xxx.vue中用this.GLOBAL.varName访问
+- src/mock: mockjs部分，用来模拟后端传递数据，可以参考data_getter.js文件
+- pages：每一个页面的具体内容，在template里面写具体的内容
 
-# build for production and view the bundle analyzer report
-npm run build --report
+## 路由关系
 
-# run unit tests
-npm run unit
-
-# run e2e tests
-npm run e2e
-
-# run all tests
-npm test
-```
-
-For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+- App.vue中，每一个el-menu-item会有index属性，两个menu会分别有一组index，比如纵向的（左侧的）菜单选择了关系数据服务，横向的菜单选择了权限管理，则路由是/relation/Auth_1
+  - 代码中`<el-menu-item index="relation"><i class="el-icon-menu"></i><span slot="title">关系数据服务</span></el-menu-item>`有index为relation，横向的menu-item也有index属性
+  - 具体可以看selectVertical和selectHorizontal函数
+- 在router/index.js中，每一个路由路径都对应于一个component

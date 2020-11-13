@@ -47,7 +47,7 @@
             <el-col :span="12" style="margin-top: 10px">工业{{ getSubTitle() }}数据管理服务</el-col>
             <el-col :span="12">
               <el-button type="primary" plain @click="login">身份认证</el-button>
-              <el-button type="primary" plain>查看日志</el-button>
+              <el-button type="primary" plain @click="showLogs">查看日志</el-button>
             </el-col>
           </el-row>
           <el-menu :default-active="Auth_1" class="el-menu-demo" mode="horizontal" @select="selectHorizontal">
@@ -77,7 +77,7 @@ export default {
       activeDatabase: 'relation',
       activePage: 'Auth_1',
       userAdmin: true,
-      userName: '用户1'
+      userName: this.GLOBAL.username
     }
   },
   methods: {
@@ -116,6 +116,9 @@ export default {
         }, function (response) {
           this.$alert('登录失败，请稍后再试！')
         })
+    },
+    showLogs: function () {
+      this.$alert('LOGS: ')
     }
   }
 }

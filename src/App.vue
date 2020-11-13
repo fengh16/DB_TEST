@@ -30,7 +30,7 @@
         <el-header style="margin-top: 20px">
           <!-- right top menu -->
           <el-row style="height: 50px">
-            <el-col :span="16">工业互联网可信服务数据管理测试子平台</el-col>
+            <el-col :span="16">{{ this.GLOBAL.systemName }}</el-col>
             <el-col :span="8">
               <el-dropdown>
                 <span class="el-dropdown-link">
@@ -46,19 +46,19 @@
           <el-row>
             <el-col :span="12" style="margin-top: 10px">工业{{ getSubTitle() }}数据管理服务</el-col>
             <el-col :span="12">
-              <el-button type="primary" plain>身份认证</el-button>
+              <el-button type="primary" plain @click="login">身份认证</el-button>
               <el-button type="primary" plain>查看日志</el-button>
             </el-col>
           </el-row>
-          <el-menu :default-active="$route.path" class="el-menu-demo" mode="horizontal" router>
-            <el-menu-item index="1">权限管理</el-menu-item>
-            <el-menu-item index="2">数据隔离</el-menu-item>
-            <el-menu-item index="3">安全控制</el-menu-item>
-            <el-menu-item index="4">可操作性</el-menu-item>
-            <el-menu-item index="5">知情权</el-menu-item>
-            <el-menu-item index="6">可迁移性</el-menu-item>
-            <el-menu-item index="7">可恢复性</el-menu-item>
-            <el-menu-item index="8">可销毁性</el-menu-item>
+          <el-menu :default-active="Auth_1" class="el-menu-demo" mode="horizontal" @select="selectHorizontal">
+            <el-menu-item index="Auth_1">权限管理</el-menu-item>
+            <el-menu-item index="Isolate_2">数据隔离</el-menu-item>
+            <el-menu-item index="Control_3">安全控制</el-menu-item>
+            <el-menu-item index="Operate_4">可操作性</el-menu-item>
+            <el-menu-item index="Know_5">知情权</el-menu-item>
+            <el-menu-item index="Migrate_6">可迁移性</el-menu-item>
+            <el-menu-item index="Recover_7">可恢复性</el-menu-item>
+            <el-menu-item index="Destroy_8">可销毁性</el-menu-item>
           </el-menu>
         </el-header>
         <el-main style="margin-top: 80px">
@@ -75,6 +75,7 @@ export default {
   data () {
     return {
       activeDatabase: 'relation',
+      activePage: 'Auth_1',
       userAdmin: true,
       userName: '用户1'
     }
@@ -83,6 +84,12 @@ export default {
     selectVertical: function (index, indexPath) {
       this.activeDatabase = index
       console.log('Now active database: ', index)
+      this.$router.push({path: '/' + this.activeDatabase + '/' + this.activePage, query: {}})
+    },
+    selectHorizontal: function (index, indexPath) {
+      this.activePage = index
+      console.log('Now active page: ', index)
+      this.$router.push({path: '/' + this.activeDatabase + '/' + this.activePage, query: {}})
     },
     getSubTitle: function () {
       if (this.activeDatabase === 'relation') {
@@ -91,6 +98,24 @@ export default {
         return '图'
       }
       return '其他'
+    },
+    login: function () {
+      this.$http.post('/login/').then(
+        function (response) {
+          if (response.status === 200 && response.body.result === '登录成功') {
+            console.log(response.body)
+            if (response.body.usertype === '管理员') {
+              this.userAdmin = true
+            } else {
+              this.userAdmin = false
+            }
+            this.$alert('登录成功！')
+          } else {
+            this.$alert('登录失败，请稍后再试！')
+          }
+        }, function (response) {
+          this.$alert('登录失败，请稍后再试！')
+        })
     }
   }
 }

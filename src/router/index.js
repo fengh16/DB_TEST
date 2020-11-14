@@ -5,6 +5,7 @@ import KnowRelationPage from '@/pages/relational/RelKnow'
 import AuthGraphPage from '@/pages/graph/GraphAuth'
 import KnowGraphPage from '@/pages/graph/GraphKnow'
 import RelManipulation from '@/pages/relational/RelManipulation'
+import NotFound from '@/pages/NotFound'
 
 Vue.use(Router)
 
@@ -35,6 +36,19 @@ export default new Router({
       path: '/relation/Operate_4',
       name: '关系可操作性',
       component: RelManipulation
+    },
+    {
+      path: '/404',
+      name: '404页面',
+      component: NotFound
+    },
+    {
+      path: '/',
+      redirect: '/relation/Auth_1' // 自动跳转
+    },
+    {
+      path: '*',
+      redirect: '/404' // 自动跳转，所有没有定义的都会自动跳转到Auth1
     }
   ]
 })

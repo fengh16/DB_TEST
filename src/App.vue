@@ -27,8 +27,7 @@
       </el-aside>
       <!-- right part -->
       <el-container>
-        <el-header style="margin-top: 20px">
-          <!-- right top menu -->
+        <el-main>
           <el-row style="height: 50px">
             <el-col :span="16">{{ this.GLOBAL.systemName }}</el-col>
             <el-col :span="8">
@@ -60,8 +59,6 @@
             <el-menu-item index="Recover_7">可恢复性</el-menu-item>
             <el-menu-item index="Destroy_8">可销毁性</el-menu-item>
           </el-menu>
-        </el-header>
-        <el-main style="margin-top: 80px">
           <router-view v-if="authed"/>
           <h1 v-else>请先进行身份认证！</h1>
 <!--          <div class="unable"></div>-->
@@ -191,6 +188,11 @@ export default {
           this.$alert('获取日志失败，请检查网络连接，稍后再试！')
         })
     }
+  },
+  created () {
+    let pathSplit = this.$route.path.split('?')[0].split('/')
+    this.activeDatabase = pathSplit[1]
+    this.activePage = pathSplit[2]
   }
 }
 </script>

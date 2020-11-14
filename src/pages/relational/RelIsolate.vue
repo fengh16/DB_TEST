@@ -1,0 +1,272 @@
+<template>
+  <el-col>
+    <el-row :span="1" class="left-indent from-left margin-top">
+      <el-select v-model="instanceID" placeholder="选择实例">
+        <el-option
+          v-for="item in instanceList"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+        </el-option>
+      </el-select>
+    </el-row>
+    <el-row type='flex' :span="10">
+      <el-col :span="10">
+        <div class="from-left left-indent margin-top">
+          <el-table :data="operationTable" border class="margin-top">
+            <el-table-column property="operationName" label="操作名称"></el-table-column>
+            <el-table-column property="table" label="表名">
+              <template slot-scope="scope">
+                <el-input v-model="tableName[scope.$index]" type="text"></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column property="operate" label="操作">
+              <template slot-scope="scope">
+                <el-button @click="operate(scope.$index)" type="text">执行</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+      <el-col :span="8" :offset="1">
+        <div class="from-left left-indent margin-top" v-if="hasResult">
+          <el-table :data="dataTable" border class="margin-top">
+            <el-table-column :label="displayTableTitle" align="center">
+              <el-table-column align="center"
+                v-for="item in dataTableSchema"
+                  :key="item.id"
+                  :label="item.columnName">
+              </el-table-column>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+  </el-col>
+</template>
+
+<script>
+export default {
+  name: 'IsolateRelationPage',
+  data () {
+    return {
+      instanceID: 1, // 实例ID，默认为1
+      instanceList: [{
+        value: 1,
+        label: '实例一'
+      }, {
+        value: 2,
+        label: '实例二'
+      }, {
+        value: 3,
+        label: '...'
+      }],
+      tableName: ['', '', '', '', '', ''], // 分别对应六个操作的输入表名
+      operationTable: [{
+        'operationName': '创建表',
+        'table': '',
+        'operate': '执行'
+      }, {
+        'operationName': '查看表信息',
+        'table': '',
+        'operate': '执行'
+      }, {
+        'operationName': '插入数据',
+        'table': '',
+        'operate': '执行'
+      }, {
+        'operationName': '更新数据',
+        'table': '',
+        'operate': '执行'
+      }, {
+        'operationName': '删除数据',
+        'table': '',
+        'operate': '执行'
+      }, {
+        'operationName': '查看数据',
+        'table': '',
+        'operate': '执行'
+      }],
+      dataTable: [{
+        id: 0,
+        prop1: 'row1, col1',
+        prop2: 'row1, col2'
+      }, {
+        id: 1,
+        prop1: 'row2, col1',
+        prop2: 'row2, col2'
+      }],
+      dataTableSchema: [{
+        id: 0,
+        columnName: 'column1',
+        propName: 'prop1'
+      }, {
+        id: 1,
+        columnName: 'column2',
+        propName: 'prop2'
+      }],
+      displayTableTitle: 'table_instance',
+      hasResult: false
+    }
+  },
+  methods: {
+    operate (operationID) {
+      switch (operationID) {
+        case 0:
+          // 创建表
+          console.log(this.tableName[operationID])
+          this.$http.post('/relational/create-table/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+              } else {
+                this.$alert('创建数据表失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('创建数据表失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+        case 1:
+          // 查看表信息
+          console.log(this.tableName[operationID])
+          this.$http.get('/relational/view-table-schema/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID,
+            encryptMethod: 'SHA1'
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+                this.dataTableSchema = []
+                this.displayTableTitle = this.tableName[operationID]
+                response.body.result.schema.forEach(e => {
+                  this.dataTableSchema.push({
+                    columnName: e.columnName,
+                    dataType: e.dataType,
+                    constraint: e.constraint
+                  })
+                })
+              } else {
+                this.$alert('查看表信息失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('查看表信息失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+        case 2:
+          // 插入数据
+          console.log(this.tableName[operationID])
+          this.$http.post('/relational/insert/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+              } else {
+                this.$alert('插入数据失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('插入数据失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+        case 3:
+          // 更新数据
+          console.log(this.tableName[operationID])
+          this.$http.post('/relational/update/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+              } else {
+                this.$alert('更新数据失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('更新数据失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+        case 4:
+          // 删除数据
+          console.log(this.tableName[operationID])
+          this.$http.post('/relational/delete/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+              } else {
+                this.$alert('删除数据失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('删除数据失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+        case 5:
+          // 查看数据
+          console.log(this.tableName[operationID])
+          this.$http.get('/relational/select/', {
+            databaseName: '',
+            tableName: this.tableName[operationID],
+            username: '',
+            instanceID: this.instanceID
+          }).then(
+            function (response) {
+              if (response.status === 200 && response.body.success) {
+                console.log(response.body)
+                this.hasResult = true
+                this.dataTable = response.body.result
+                this.displayTableTitle = this.tableName[operationID]
+                console.log(this.dataTable)
+              } else {
+                this.$alert('插入数据失败，请稍后再试！')
+              }
+            }, function (response) {
+              this.$alert('插入数据失败，请检查网络连接，稍后再试！')
+            }
+          )
+          break
+      }
+    },
+    getProp (index) {
+      console.log('porp' + String(index))
+      return 'prop' + String(index)
+    }
+  },
+  created () {
+    // this.createDatabase()
+  }
+}
+</script>
+
+<style scoped>
+  .from-left {
+    text-align: left;
+  }
+  .left-indent {
+    margin-left: 40px;
+  }
+  .margin-top {
+    margin-top: 20px;
+  }
+</style>

@@ -69,23 +69,67 @@ export default {
       }]
     }
   },
+  'post|/relational/create-database': option => {
+    return {
+      status: 200,
+      success: true,
+      result: ['创建成功'],
+      log: ['log1 of create-database', 'log2 of create-database']
+    }
+  },
+  'post|/relational/create-table': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '创建成功',
+      log: ['log1 of create-table', 'log2 of create-table']
+    }
+  },
   'get|/relational/view-table-schema': option => {
     return {
       status: 200,
       success: true,
-      result: [{
-        id: 0,
-        columnName: 'column1',
-        propName: 'prop1',
-        columnType: 'integer',
-        columnConstraint: 'primary key'
-      }, {
-        id: 1,
-        columnName: 'column2',
-        propName: 'prop2',
-        columnType: 'varchar(32)',
-        columnConstraint: ''
-      }]
+      result: {
+        'tableName': 'industry_table_1',
+        'schema': [{
+          id: 0,
+          columnName: 'column1',
+          propName: 'prop1',
+          columnType: 'integer',
+          columnConstraint: 'primary key'
+        }, {
+          id: 1,
+          columnName: 'column2',
+          propName: 'prop2',
+          columnType: 'varchar(32)',
+          columnConstraint: ''
+        }]
+      },
+      log: ['log of view-table-schema']
+    }
+  },
+  'post|/relational/insert': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '插入大失败',
+      log: ['log of insert']
+    }
+  },
+  'post|/relational/update': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '更新成功',
+      log: ['log of update']
+    }
+  },
+  'post|/relational/delete': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '删除成功',
+      log: ['log of delete']
     }
   }
 }

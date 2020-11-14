@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import AuthRelationPage from '@/pages/relational/RelAuth'
 import KnowRelationPage from '@/pages/relational/RelKnow'
+import IsolateRelationPage from '@/pages/relational/RelIsolate'
 import AuthGraphPage from '@/pages/graph/GraphAuth'
 import KnowGraphPage from '@/pages/graph/GraphKnow'
 import RelOperate from '@/pages/relational/RelOperate'
@@ -16,6 +17,11 @@ export default new Router({
       path: '/relation/Auth_1',
       name: '关系权限管理',
       component: AuthRelationPage
+    },
+    {
+      path: '/relation/Isolate_2',
+      name: '关系数据隔离',
+      component: IsolateRelationPage
     },
     {
       path: '/relation/Know_5',

@@ -68,5 +68,59 @@ export default {
         prop2: 'row2, col2'
       }]
     }
+  },
+  'post|/relational/create-database': option => {
+    return {
+      status: 200,
+      success: true,
+      result: ['创建成功'],
+      log: ['log1 of create-database', 'log2 of create-database']
+    }
+  },
+  'post|/relational/create-table': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '创建成功',
+      log: ['log1 of create-table', 'log2 of create-table']
+    }
+  },
+  'get|/relational/view-table-schema': option => {
+    return {
+      status: 200,
+      success: true,
+      result: {
+        'schema': [{
+          'columnName': 'col1',
+          'dataType': 'int',
+          'constraint': ['??']
+        }, {}]
+      },
+      log: ['log of view-table-schema']
+    }
+  },
+  'post|/relational/insert': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '插入大失败',
+      log: ['log of insert']
+    }
+  },
+  'post|/relational/update': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '更新成功',
+      log: ['log of update']
+    }
+  },
+  'post|/relational/delete': option => {
+    return {
+      status: 200,
+      success: true,
+      result: '删除成功',
+      log: ['log of delete']
+    }
   }
 }

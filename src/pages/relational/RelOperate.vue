@@ -2,7 +2,7 @@
   <el-row type="flex">
     <el-col :span="10">
       <div class="left-indent">
-        <h1 class="from-left">身份认证测试</h1>
+        <h1>身份认证功能测试</h1>
         <div class="from-left">
           <el-select v-model="currentDatabaseName" placeholder="选择数据库">
             <el-option
@@ -66,22 +66,51 @@
       </div>
     </el-col>
     <el-col :span="12" :offset="1">
-      <h1>{{displayTableTitle}}</h1>
-      <el-table :data="dataTable"
-                ref="displayData"
-                stripe
-                row-key="id"
-                default-expand-all
+      <h1>查看测试结果</h1>
+      <div class="title-reserved">
+        <h1>{{displayTitle}}</h1>
+      </div>
+      <el-table
+        v-if="currentFocusOperation === 5"
+        :data="dataTable"
+        ref="displayData"
+        stripe
+        row-key="id"
+        default-expand-all
       >
         <el-table-column
-          v-for="(columnDef) in dataTableSchema"
+          v-for="(columnDef, index) in dataTableSchema"
           :prop="columnDef.propName"
           :label="columnDef.columnName"
-          :key="columnDef.id"
+          :key="index"
           align="left"
           >
 
         </el-table-column>
+      </el-table>
+      <el-table
+        v-if="currentFocusOperation === 1"
+        :data="dataTableSchema"
+        ref="displayDataSchema"
+        stripe
+        row-key="id"
+        default-expand-all
+        >
+        <el-table-column
+          prop="columnName"
+          label="列名"
+          align="center"
+          ></el-table-column>
+        <el-table-column
+          prop="columnType"
+          label="类型"
+          align="left"
+          ></el-table-column>
+        <el-table-column
+          prop="columnConstraint"
+          label="约束"
+          align="left"
+        ></el-table-column>
       </el-table>
     </el-col>
   </el-row>
@@ -135,16 +164,14 @@ export default {
         paramHint: '输入要嵌入的信息'
       }],
       dataTable: [],
-      dataTableSchema: [{
-        id: 0,
-        columnName: 'column1',
-        propName: 'prop1'
-      }, {
-        id: 1,
-        columnName: 'column2',
-        propName: 'prop2'
-      }],
-      displayTableTitle: 'industry_table_2'
+      dataTableSchema: [],
+      displayTableTitle: ' ',
+      currentFocusOperation: 0
+    }
+  },
+  computed: {
+    displayTitle () {
+      return this.currentFocusOperation === 1 ? this.displayTableTitle : ''
     }
   },
   methods: {
@@ -168,6 +195,19 @@ export default {
         }, function (response) {
           this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
         })
+    },
+    getDisplayTableSchema () {
+      this.$http.get('/relational/view-table-schema/', {
+        username: '',
+        databaseName: '',
+        tableName: '',
+        instanceId: 0,
+        encrypted: false
+      }).then(
+        function (response) {
+          this.dataTableSchema = response.body.result
+        }
+      )
     },
     getDisplayTable () {
       this.$http.get('/relational/select/', {
@@ -200,9 +240,18 @@ export default {
     },
     onExecute (operationId) {
       console.log(operationId)
+      this.currentFocusOperation = operationId
       switch (operationId) {
+        case 1:
+          // schema
+          this.getDisplayTableSchema()
+          break
         case 5:
+          // select
+          this.displayTableTitle = this.operationTable[5].tableName
+          this.getDisplayTableSchema()
           this.getDisplayTable()
+          break
       }
     }
   },
@@ -218,5 +267,8 @@ export default {
   }
   .left-indent {
     margin-left: 40px;
+  }
+  .title-reserved {
+    height: 60px;
   }
 </style>

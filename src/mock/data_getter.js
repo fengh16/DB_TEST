@@ -68,5 +68,24 @@ export default {
         prop2: 'row2, col2'
       }]
     }
+  },
+  'get|/relational/view-table-schema': option => {
+    return {
+      status: 200,
+      success: true,
+      result: [{
+        id: 0,
+        columnName: 'column1',
+        propName: 'prop1',
+        columnType: 'integer',
+        columnConstraint: 'primary key'
+      }, {
+        id: 1,
+        columnName: 'column2',
+        propName: 'prop2',
+        columnType: 'varchar(32)',
+        columnConstraint: ''
+      }]
+    }
   }
 }

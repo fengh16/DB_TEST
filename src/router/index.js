@@ -4,7 +4,7 @@ import AuthRelationPage from '@/pages/relational/RelAuth'
 import KnowRelationPage from '@/pages/relational/RelKnow'
 import AuthGraphPage from '@/pages/graph/GraphAuth'
 import KnowGraphPage from '@/pages/graph/GraphKnow'
-import RelManipulation from '@/pages/relational/RelManipulation'
+import RelOperate from '@/pages/relational/RelOperate'
 import NotFound from '@/pages/NotFound'
 
 Vue.use(Router)
@@ -35,7 +35,7 @@ export default new Router({
     {
       path: '/relation/Operate_4',
       name: '关系可操作性',
-      component: RelManipulation
+      component: RelOperate
     },
     {
       path: '/404',

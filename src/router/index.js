@@ -1,7 +1,9 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import AuthRelationPage from '@/pages/Auth_1_Relation'
+import KnowRelationPage from '@/pages/Know_5_Relation'
 import AuthGraphPage from '@/pages/Auth_1_Graph'
+import KnowGraphPage from '@/pages/Know_5_Graph'
 
 Vue.use(Router)
 
@@ -14,9 +16,19 @@ export default new Router({
       component: AuthRelationPage
     },
     {
+      path: '/relation/Know_5',
+      name: '关系知情权',
+      component: KnowRelationPage
+    },
+    {
       path: '/graph/Auth_1',
       name: '图权限管理',
       component: AuthGraphPage
+    },
+    {
+      path: '/graph/Know_5',
+      name: '图知情权',
+      component: KnowGraphPage
     }
   ]
 })

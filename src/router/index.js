@@ -4,6 +4,7 @@ import AuthRelationPage from '@/pages/Auth_1_Relation'
 import KnowRelationPage from '@/pages/Know_5_Relation'
 import AuthGraphPage from '@/pages/Auth_1_Graph'
 import KnowGraphPage from '@/pages/Know_5_Graph'
+import RelManipulation from '@/pages/relational/RelManipulation'
 
 Vue.use(Router)
 
@@ -29,6 +30,11 @@ export default new Router({
       path: '/graph/Know_5',
       name: '图知情权',
       component: KnowGraphPage
+    },
+    {
+      path: '/relation/Operate_4',
+      name: '关系可操作性',
+      component: RelManipulation
     }
   ]
 })

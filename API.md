@@ -554,3 +554,20 @@ response = {
 }
 ```
 
+24. 列出当前所有数据库
+
+```python
+'GET /relational/list-database'
+
+param = {
+    "username": str
+}
+
+response = {
+    200: {
+        "success": bool,
+        "result": [str],
+        "log": [str]
+    }
+}
+```

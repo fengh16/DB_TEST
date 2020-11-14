@@ -30,5 +30,27 @@ export default {
       },
       log: ['log1 of relational description', 'log2 of relational description']
     }
+  },
+  'get|/relational/list-database/': option => {
+    return {
+      status: 200,
+      success: true,
+      result: ['industry_database_1', 'industry_database_2', 'industry_database_3']
+    }
+  },
+  'get|/relational/select/': option => {
+    return {
+      status: 200,
+      success: true,
+      result: [{
+        id: 0,
+        prop1: 'row1, col1',
+        prop2: 'row1, col2'
+      }, {
+        id: 1,
+        prop1: 'row2, col1',
+        prop2: 'row2, col2'
+      }]
+    }
   }
 }

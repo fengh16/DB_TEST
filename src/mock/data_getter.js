@@ -19,5 +19,27 @@ export default {
       success: true,
       result: ['2020年10月10日往表ABC插入两条数据', '2020年11月11日删库跑路', '2020年11月12日恢复成功'] // 每个元素是一行日志
     }
+  },
+  'get|/relational/list-database/': option => {
+    return {
+      status: 200,
+      success: true,
+      result: ['industry_database_1', 'industry_database_2', 'industry_database_3']
+    }
+  },
+  'get|/relational/select/': option => {
+    return {
+      status: 200,
+      success: true,
+      result: [{
+        id: 0,
+        prop1: 'row1, col1',
+        prop2: 'row1, col2'
+      }, {
+        id: 1,
+        prop1: 'row2, col1',
+        prop2: 'row2, col2'
+      }]
+    }
   }
 }

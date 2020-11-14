@@ -1,46 +1,222 @@
 <template>
-  <el-col :span="12">
-    <h1>身份认证测试</h1>
-    <div>
-      <el-select v-model="value" placeholder="选择数据库">
-        <el-option
-          v-for="item in options"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value">
-        </el-option>
-      </el-select>
-    </div>
-  </el-col>
+  <el-row type="flex">
+    <el-col :span="10">
+      <div class="left-indent">
+        <h1 class="from-left">身份认证测试</h1>
+        <div class="from-left">
+          <el-select v-model="currentDatabaseName" placeholder="选择数据库">
+            <el-option
+              v-for="item in databaseList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
+          <el-button type="primary" plain @click="onDebug">DEBUG</el-button>
+        </div>
+        <el-table :data="operationTable"
+                  ref="operations"
+                  stripe
+                  row-key="id"
+                  default-expand-all
+        >
+          <el-table-column
+            prop="title"
+            label="操作名称"
+            align="left"
+            width="120"
+          ></el-table-column>
+          <el-table-column
+            prop="tableName"
+            label="表名"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-input
+                placeholder="输入表名"
+                v-model="scope.row.tableName"
+                clearable>
+              </el-input>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="param"
+            label="参数"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-input
+                v-if="scope.row.needParam"
+                :placeholder="scope.row.paramHint"
+                v-model="scope.row.param"
+                clearable>
+              </el-input>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="操作"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-button type="primary" size="mini" plain @click="onExecute(scope.row.id)">执行</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-col>
+    <el-col :span="12" :offset="1">
+      <h1>{{displayTableTitle}}</h1>
+      <el-table :data="dataTable"
+                ref="displayData"
+                stripe
+                row-key="id"
+                default-expand-all
+      >
+        <el-table-column
+          v-for="(columnDef) in dataTableSchema"
+          :prop="columnDef.propName"
+          :label="columnDef.columnName"
+          :key="columnDef.id"
+          align="left"
+          >
+
+        </el-table-column>
+      </el-table>
+    </el-col>
+  </el-row>
 </template>
 
 <script>
 export default {
   name: 'RelManipulation',
-  data() {
+  data () {
     return {
-      options: [{
-        value: '选项1',
-        label: '黄金糕'
+      databaseList: [],
+      currentDatabaseName: '',
+      operationTable: [{
+        id: 0,
+        title: '创建表',
+        tableName: '',
+        needParam: false,
+        param: '',
+        paramHint: ''
       }, {
-        value: '选项2',
-        label: '双皮奶'
+        id: 1,
+        title: '查看表元数据',
+        tableName: '',
+        needParam: false
       }, {
-        value: '选项3',
-        label: '蚵仔煎'
+        id: 2,
+        title: '插入数据',
+        tableName: '',
+        needParam: false
       }, {
-        value: '选项4',
-        label: '龙须面'
+        id: 3,
+        title: '删除数据',
+        tableName: '',
+        needParam: false
       }, {
-        value: '选项5',
-        label: '北京烤鸭'
+        id: 4,
+        title: '更新数据',
+        tableName: '',
+        needParam: false
+      }, {
+        id: 5,
+        title: '查看数据',
+        tableName: '',
+        needParam: false
+      }, {
+        id: 6,
+        title: '信息嵌入',
+        tableName: '',
+        needParam: true,
+        param: '',
+        paramHint: '输入要嵌入的信息'
       }],
-      value: ''
+      dataTable: [],
+      dataTableSchema: [{
+        id: 0,
+        columnName: 'column1',
+        propName: 'prop1'
+      }, {
+        id: 1,
+        columnName: 'column2',
+        propName: 'prop2'
+      }],
+      displayTableTitle: 'industry_table_2'
     }
+  },
+  methods: {
+    getDatabaseList () {
+      this.$http.get('/relational/list-database/', {
+        username: ''
+      }).then(
+        function (response) {
+          if (response.status === 200 && response.body.success) {
+            console.log(response.body)
+            this.databaseList = []
+            response.body.result.forEach(e => {
+              this.databaseList.push({
+                value: e,
+                label: e
+              })
+            })
+          } else {
+            this.$alert('获取数据库列表失败，请稍后再试！')
+          }
+        }, function (response) {
+          this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
+        })
+    },
+    getDisplayTable () {
+      this.$http.get('/relational/select/', {
+        username: '',
+        databaseName: '',
+        tableName: '',
+        instanceId: 0,
+        encrypted: false
+      }).then(
+        function (response) {
+          if (response.status === 200 && response.body.success) {
+            console.log(response.body)
+            this.dataTable = response.body.result
+          } else {
+            this.$alert('获取数据表失败，请稍后再试！')
+          }
+        }, function (response) {
+          this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
+        })
+    },
+    onClickCreateDatabase () {
+
+    },
+    onDebug () {
+      let tableNames = []
+      this.operationTable.forEach(e => {
+        tableNames.push(e.tableName)
+      })
+      console.log(tableNames)
+    },
+    onExecute (operationId) {
+      console.log(operationId)
+      switch (operationId) {
+        case 5:
+          this.getDisplayTable()
+      }
+    }
+  },
+  created () {
+    this.getDatabaseList()
   }
 }
 </script>
 
 <style scoped>
-
+  .from-left {
+    text-align: left;
+  }
+  .left-indent {
+    margin-left: 40px;
+  }
 </style>

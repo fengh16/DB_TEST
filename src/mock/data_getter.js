@@ -25,8 +25,9 @@ export default {
       status: 200,
       success: true,
       result: {
-        'result1': 'i don\'t know what to write',
-        'result2': 'a result of description'
+        'IP地址': '166.111.80.113',
+        'mac地址': '80:18:44:f4:07:6e',
+        '...': '...'
       },
       log: ['log1 of relational description', 'log2 of relational description']
     }

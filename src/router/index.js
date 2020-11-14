@@ -1,9 +1,9 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import AuthRelationPage from '@/pages/Auth_1_Relation'
-import KnowRelationPage from '@/pages/Know_5_Relation'
-import AuthGraphPage from '@/pages/Auth_1_Graph'
-import KnowGraphPage from '@/pages/Know_5_Graph'
+import AuthRelationPage from '@/pages/relational/RelAuth'
+import KnowRelationPage from '@/pages/relational/RelKnow'
+import AuthGraphPage from '@/pages/graph/GraphAuth'
+import KnowGraphPage from '@/pages/graph/GraphKnow'
 import RelManipulation from '@/pages/relational/RelManipulation'
 
 Vue.use(Router)

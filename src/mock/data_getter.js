@@ -1,16 +1,31 @@
 export default {
-  'post|/login': option => {
+  'post|/login': function (option) {
+    let body = JSON.parse(option.body)
+    if ('username' in body && 'password' in body && body['username'] && body['username'] === body['password']) {
+      return {
+        status: 200,
+        result: '登录成功',
+        usertype: '管理员'
+      }
+    }
     return {
-      status: 200,
-      result: '登录成功',
-      usertype: '管理员'
+      status: 500,
+      result: '登录失败'
     }
   },
-  'post|/relational/authenticate': option => {
+  'post|/relational/authenticate': function (option) {
+    let body = JSON.parse(option.body)
+    if ('username' in body && 'password' in body && body['username'] && body['username'] === body['password']) {
+      return {
+        status: 200,
+        success: true,
+        result: '认证成功'
+      }
+    }
     return {
       status: 200,
-      success: true,
-      result: '认证成功'
+      success: false,
+      result: '认证失败'
     }
   },
   'get|/relational/log': option => {

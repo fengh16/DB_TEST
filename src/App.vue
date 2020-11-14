@@ -31,14 +31,14 @@
           <el-row style="height: 50px">
             <el-col :span="16">{{ this.GLOBAL.systemName }}</el-col>
             <el-col :span="8">
-              <el-dropdown>
+              <el-dropdown @command="userCommand">
                 <span class="el-dropdown-link">
                   <!--{{ userAdmin ? '管理员': '普通用户' }}/{{ userName }}<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
                   {{ userName }}<i class="el-icon-arrow-down el-icon--right"></i>
                 </span>
                 <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item icon="el-icon-plus">设置</el-dropdown-item>
-                  <el-dropdown-item icon="el-icon-circle-plus">登出</el-dropdown-item>
+                  <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
+                  <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
             </el-col>
@@ -46,8 +46,8 @@
           <el-row>
             <el-col :span="12" style="margin-top: 10px">工业{{ getSubTitle() }}数据管理服务</el-col>
             <el-col :span="12">
-              <el-button type="primary" plain @click="inputUserName=userName; authTableShow=true" v-if="!authed">身份认证</el-button>
-              <el-button type="primary" plain @click="authed=false; document.cookie='authed='" v-else>取消认证</el-button>
+              <el-button type="primary" plain @click="doAuth" v-if="!authed">身份认证</el-button>
+              <el-button type="primary" plain @click="cancelAuth" v-else>取消认证</el-button>
               <el-button type="primary" plain @click="showLogs">查看日志</el-button>
             </el-col>
           </el-row>
@@ -87,7 +87,7 @@
         <el-button type="primary" @click="this.auth">认 证</el-button>
       </div>
     </el-dialog>
-    <el-dialog title="登录" v-if="!loggedIn" :visible.sync="showLogin">
+    <el-dialog title="登录" v-if="!loggedIn" :visible.sync="showLogin" :close-on-click-modal=false :close-on-press-escape=false :show-close=false>
       <el-form>
         <el-form-item label="用户名" :label-width="formLabelWidth">
           <el-input v-model="inputUserName" autocomplete="off" placeholder="请输入用户名"></el-input>
@@ -127,11 +127,17 @@ export default {
     selectVertical: function (index, indexPath) {
       this.activeDatabase = index
       console.log('Now active database: ', index)
+      if (!this.activePage) {
+        this.activePage = 'Auth_1'
+      }
       this.$router.push({path: '/' + this.activeDatabase + '/' + this.activePage, query: {}})
     },
     selectHorizontal: function (index, indexPath) {
       this.activePage = index
       console.log('Now active page: ', index)
+      if (!this.activeDatabase) {
+        this.activeDatabase = 'relation'
+      }
       this.$router.push({path: '/' + this.activeDatabase + '/' + this.activePage, query: {}})
     },
     getSubTitle: function () {
@@ -145,6 +151,16 @@ export default {
     showAuth: function () {
       this.password = ''
       this.authTableShow = true
+    },
+    doLogout: function () {
+      console.log('HHH')
+      this.authed = false
+      this.loggedIn = false
+      document.cookie = 'username='
+      document.cookie = 'authed='
+      this.userName = ''
+      this.GLOBAL.username = ''
+      this.showLogin = true
     },
     login: function () {
       let nowUsername = this.inputUserName // prevent the change of username during the request
@@ -171,6 +187,14 @@ export default {
         }, function (response) {
           this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
         })
+    },
+    doAuth: function () {
+      this.inputUserName = this.userName
+      this.authTableShow = true
+    },
+    cancelAuth: function () {
+      this.authed = false
+      document.cookie = 'authed='
     },
     auth: function () {
       this.inputUserName = this.userName
@@ -211,6 +235,11 @@ export default {
         }, function (response) {
           this.$alert('获取日志失败，请检查网络连接，稍后再试！')
         })
+    },
+    userCommand (item) {
+      if (item === 'logout') {
+        this.doLogout()
+      }
     }
   },
   created () {
@@ -224,8 +253,8 @@ export default {
       return ''
     }
     let pathSplit = this.$route.path.split('?')[0].split('/')
-    this.activeDatabase = pathSplit[1]
-    this.activePage = pathSplit[2]
+    this.activeDatabase = pathSplit.length > 2 ? pathSplit[1] : ''
+    this.activePage = pathSplit.length > 2 ? pathSplit[2] : ''
     if (getCookie('authed')) {
       this.authed = true
     }

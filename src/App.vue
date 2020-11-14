@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-container>
+    <el-container v-if="loggedIn">
       <el-aside width="200px">
         <!-- left menu -->
         <el-menu
@@ -33,7 +33,8 @@
             <el-col :span="8">
               <el-dropdown>
                 <span class="el-dropdown-link">
-                  {{ userAdmin ? '管理员': '普通用户' }}/{{ userName }}<i class="el-icon-arrow-down el-icon--right"></i>
+                  <!--{{ userAdmin ? '管理员': '普通用户' }}/{{ userName }}<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
+                  {{ userName }}<i class="el-icon-arrow-down el-icon--right"></i>
                 </span>
                 <el-dropdown-menu slot="dropdown">
                   <el-dropdown-item icon="el-icon-plus">设置</el-dropdown-item>
@@ -45,7 +46,8 @@
           <el-row>
             <el-col :span="12" style="margin-top: 10px">工业{{ getSubTitle() }}数据管理服务</el-col>
             <el-col :span="12">
-              <el-button type="primary" plain @click="authTableShow=true" v-if="!authed">身份认证</el-button>
+              <el-button type="primary" plain @click="inputUserName=userName; authTableShow=true" v-if="!authed">身份认证</el-button>
+              <el-button type="primary" plain @click="authed=false; document.cookie='authed='" v-else>取消认证</el-button>
               <el-button type="primary" plain @click="showLogs">查看日志</el-button>
             </el-col>
           </el-row>
@@ -61,7 +63,7 @@
           </el-menu>
           <router-view v-if="authed"/>
           <h1 v-else>请先进行身份认证！</h1>
-<!--          <div class="unable"></div>-->
+          <!--          <div class="unable"></div>-->
         </el-main>
       </el-container>
     </el-container>
@@ -74,7 +76,7 @@
     <el-dialog title="身份认证" :visible.sync="authTableShow">
       <el-form>
         <el-form-item label="用户名" :label-width="formLabelWidth">
-          <el-input v-model="inputUserName" autocomplete="off" placeholder="请输入用户名"></el-input>
+          <el-input v-model="inputUserName" autocomplete="off" placeholder="用户名" disabled></el-input>
         </el-form-item>
         <el-form-item label="密码" :label-width="formLabelWidth">
           <el-input v-model="password" autocomplete="off" placeholder="请输入密码" show-password></el-input>
@@ -83,6 +85,19 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="authTableShow=false">取 消</el-button>
         <el-button type="primary" @click="this.auth">认 证</el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="登录" v-if="!loggedIn" :visible.sync="showLogin">
+      <el-form>
+        <el-form-item label="用户名" :label-width="formLabelWidth">
+          <el-input v-model="inputUserName" autocomplete="off" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" :label-width="formLabelWidth">
+          <el-input v-model="password" autocomplete="off" placeholder="请输入密码" show-password></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="this.login">登 录</el-button>
       </div>
     </el-dialog>
   </div>
@@ -103,7 +118,9 @@ export default {
       password: '',
       inputUserName: '',
       formLabelWidth: '80px',
-      authed: false
+      authed: false,
+      loggedIn: false,
+      showLogin: true
     }
   },
   methods: {
@@ -130,6 +147,7 @@ export default {
       this.authTableShow = true
     },
     login: function () {
+      let nowUsername = this.inputUserName // prevent the change of username during the request
       this.$http.post('/login/', {
         username: this.inputUserName,
         password: this.password
@@ -142,7 +160,11 @@ export default {
             } else {
               this.userAdmin = false
             }
-            this.$alert('登录成功！')
+            this.userName = nowUsername
+            this.GLOBAL.username = nowUsername
+            document.cookie = 'username=' + nowUsername
+            this.loggedIn = true
+            this.showLogin = false
           } else {
             this.$alert('登录失败，请检查用户名与密码并稍后再试！')
           }
@@ -151,8 +173,9 @@ export default {
         })
     },
     auth: function () {
+      this.inputUserName = this.userName
       this.$http.post('/relational/authenticate/', {
-        username: this.inputUserName,
+        username: this.userName, // 不给他输入别的用户名的机会，就算是前端改了框里的内容也不让他提交（
         password: this.password
       }).then(
         function (response) {
@@ -161,11 +184,12 @@ export default {
             this.authTableShow = false
             this.authed = true
             this.$alert(response.body.result)
+            document.cookie = 'authed=true'
           } else {
-            this.$alert('认证失败，请检查用户名与密码并稍后再试！')
+            this.$alert('认证失败，请检查密码并稍后再试！')
           }
         }, function (response) {
-          this.$alert('认证失败，请检查用户名与密码，检查网络连接，并稍后再试！')
+          this.$alert('认证失败，请检查密码，检查网络连接，并稍后再试！')
         })
     },
     showLogs: function () {
@@ -190,25 +214,43 @@ export default {
     }
   },
   created () {
+    function getCookie (cname) {
+      var name = cname + '='
+      var ca = document.cookie.split(';')
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i].trim()
+        if (c.indexOf(name) === 0) return c.substring(name.length, c.length)
+      }
+      return ''
+    }
     let pathSplit = this.$route.path.split('?')[0].split('/')
     this.activeDatabase = pathSplit[1]
     this.activePage = pathSplit[2]
+    if (getCookie('authed')) {
+      this.authed = true
+    }
+    if (getCookie('username')) {
+      this.userName = getCookie('username')
+      this.GLOBAL.username = getCookie('username')
+      this.loggedIn = true
+      this.showLogin = false
+    }
   }
 }
 </script>
 
 <style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  /*margin-top: 60px;*/
-}
-/*.unable {*/
-/*  position: fixed;*/
-/*  margin: 0;*/
-/*  background: rgba(255,255,255,.8);*/
-/*}*/
+  #app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    /*margin-top: 60px;*/
+  }
+  /*.unable {*/
+  /*  position: fixed;*/
+  /*  margin: 0;*/
+  /*  background: rgba(255,255,255,.8);*/
+  /*}*/
 </style>

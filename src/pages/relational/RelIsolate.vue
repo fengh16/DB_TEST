@@ -41,7 +41,7 @@
               </el-table-column>
             </el-table-column>
           </el-table>
-          <el-table :data="dataTable" border class="margin-top" v-if="currentOperationID === 1">
+          <el-table :data="dataTableSchema" border class="margin-top" v-if="currentOperationID === 1">
             <el-table-column :label="displayTableTitle" align="center">
               <el-table-column
                 prop="columnName"
@@ -161,20 +161,13 @@ export default {
             tableName: this.tableName[operationID],
             username: '',
             instanceID: this.instanceID,
-            encryptMethod: 'SHA1'
+            encrypted: false
           }).then(
             function (response) {
               if (response.status === 200 && response.body.success) {
                 console.log(response.body)
-                this.dataTableSchema = []
-                this.displayTableTitle = this.tableName[operationID]
-                response.body.result.schema.forEach(e => {
-                  this.dataTableSchema.push({
-                    columnName: e.columnName,
-                    dataType: e.dataType,
-                    constraint: e.constraint
-                  })
-                })
+                this.dataTableSchema = response.body.result.schema
+                this.displayTableTitle = response.body.result.tableName
               } else {
                 this.$alert('查看表信息失败，请稍后再试！')
               }
@@ -255,7 +248,6 @@ export default {
             function (response) {
               if (response.status === 200 && response.body.success) {
                 console.log(response.body)
-                this.hasResult = true
                 this.dataTable = response.body.result
                 this.displayTableTitle = this.tableName[operationID]
                 console.log(this.dataTable)

@@ -2,7 +2,7 @@
   <el-row type="flex">
     <el-col :span="10">
       <div class="left-indent">
-        <h1>身份认证功能测试</h1>
+        <h1>可操作性功能测试</h1>
         <div class="from-left">
           <el-select v-model="currentDatabaseName" placeholder="选择数据库" default-first-option>
             <el-option
@@ -120,7 +120,7 @@
 
 <script>
 export default {
-  name: 'RelManipulation',
+  name: 'RelOperate',
   data () {
     return {
       databaseList: [],
@@ -174,7 +174,7 @@ export default {
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 1 | this.currentFocusOperation === 5;
+      return this.currentFocusOperation === 1 | this.currentFocusOperation === 5
     }
   },
   methods: {

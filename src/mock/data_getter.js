@@ -131,5 +131,46 @@ export default {
       result: '删除成功',
       log: ['log of delete']
     }
+  },
+  'get|/relational/user-privilege-list/': option => {
+    console.log(option)
+    return {
+      status: 200,
+      success: true,
+      result: [{
+        caseId: 0,
+        title: '全局权限管理',
+        children: [{
+          itemId: 0,
+          title: '创建数据库权限',
+          granted: {
+            administrator: true,
+            developer1: true,
+            developer2: false
+          }}, {
+          itemId: 1,
+          title: '访问数据库权限',
+          granted: {
+            administrator: true,
+            developer1: true,
+            developer2: true
+          }}, {
+          itemId: 2,
+          title: '更改数据库权限',
+          granted: {
+            administrator: true,
+            developer1: true,
+            developer2: false
+          }}, {
+          itemId: 3,
+          title: '删除数据库权限',
+          granted: {
+            administrator: true,
+            developer1: true,
+            developer2: false
+          }
+        }]
+      }]
+    }
   }
 }

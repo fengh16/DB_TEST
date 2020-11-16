@@ -29,7 +29,7 @@
       <el-container>
         <el-main>
           <el-row style="height: 50px">
-            <el-col :span="16">{{ this.GLOBAL.systemName }}</el-col>
+            <el-col :span="16"><h1>{{ this.GLOBAL.systemName }}</h1></el-col>
             <el-col :span="8">
               <el-dropdown @command="userCommand">
                 <span class="el-dropdown-link">
@@ -44,7 +44,8 @@
             </el-col>
           </el-row>
           <el-row>
-            <el-col :span="12" style="margin-top: 10px">工业{{ getSubTitle() }}数据管理服务</el-col>
+
+            <el-col :span="12" style="margin-top: 10px"><hr><h1>工业{{ getSubTitle() }}数据管理服务</h1></el-col>
             <el-col :span="12">
               <el-button type="primary" plain @click="doAuth" v-if="!authed">身份认证</el-button>
               <el-button type="primary" plain @click="cancelAuth" v-else>取消认证</el-button>

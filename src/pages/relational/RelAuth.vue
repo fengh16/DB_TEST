@@ -1,13 +1,16 @@
 <template>
   <el-row type="flex">
-    <el-col :span="10">
+    <el-col :span="20">
       <div class="left-indent">
         <h1>权限管理功能测试</h1>
         <div class="from-left">
-          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
-          <el-button type="primary" plain @click="onDebug">DEBUG</el-button>
+          <p v-if="this.GLOBAL.username!=='administrator'">无权查看此页面</p>
+<!--          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>-->
+          <el-button v-if="this.GLOBAL.username==='administrator'" type="primary" plain @click="onSavePrivilegeSetting">保存</el-button>
         </div>
-        <el-table :data="operationTable"
+        <el-table
+          v-if="this.GLOBAL.username==='administrator'"
+          :data="operationTable"
                   ref="operations"
                   stripe
                   row-key="id"
@@ -15,7 +18,7 @@
         >
           <el-table-column
             prop="title"
-            label="全局权限管理"
+            :label="operationTableTitle"
             align="left"
             width="120"
           ></el-table-column>
@@ -47,21 +50,47 @@ export default {
   name: 'RelAuth',
   data () {
     return {
-      operationTable: [{
-        id: 0,
-        title: '创建数据库权限',
-        userAuth: {
-          username1: true,
-          username2: false
-        }
-      }],
-      userList: ['username1', 'username2']
+      operationTable: [],
+      operationTableTitle: '',
+      userList: ['administrator', 'developer1', 'developer2']
     }
   },
   methods: {
     getUserList () {
 
+    },
+    getPrivilegeList () {
+      this.$http.get('/relational/user-privilege-list/', {
+        params: {username: ''}
+      }).then(function (response) {
+        if (response.status === 200 && response.body.success) {
+          let privileges = response.body.result
+          privileges.forEach((board) => {
+            let operationBoard = []
+            board.children.forEach((child) => {
+              let newOperation = {
+                id: child.itemId,
+                title: child.title,
+                userAuth: child.granted
+              }
+              operationBoard.push(newOperation)
+            })
+
+            if (board.title === '全局权限管理') {
+              this.operationTable = operationBoard
+            }
+            this.operationTableTitle = board.title
+          })
+        }
+      })
+    },
+    onSavePrivilegeSetting () {
+      this.GLOBAL.privilegeList = this.operationTable
+      this.$alert('保存成功')
     }
+  },
+  created () {
+    this.getPrivilegeList()
   }
 }
 </script>

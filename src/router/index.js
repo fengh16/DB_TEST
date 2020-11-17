@@ -6,6 +6,7 @@ import IsolateRelationPage from '@/pages/relational/RelIsolate'
 import AuthGraphPage from '@/pages/graph/GraphAuth'
 import KnowGraphPage from '@/pages/graph/GraphKnow'
 import RelOperate from '@/pages/relational/RelOperate'
+import ControlRalationPage from '@/pages/relational/RelControl'
 import NotFound from '@/pages/NotFound'
 
 Vue.use(Router)
@@ -22,6 +23,11 @@ export default new Router({
       path: '/relation/Isolate_2',
       name: '关系数据隔离',
       component: IsolateRelationPage
+    },
+    {
+      path: '/relation/Control_3',
+      name: '关系安全控制',
+      component: ControlRalationPage
     },
     {
       path: '/relation/Know_5',

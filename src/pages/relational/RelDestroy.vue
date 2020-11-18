@@ -49,24 +49,54 @@
         </el-table>
       </div>
     </el-col>
-    <el-col :span="12" :offset="1">
-      <h1>{{displayTableTitle}}</h1>
-      <el-table :data="dataTable"
-                ref="displayData"
-                stripe
-                row-key="id"
-                default-expand-all
-      >
-        <el-table-column
-          v-for="(columnDef) in dataTableSchema"
-          :prop="columnDef.propName"
-          :label="columnDef.columnName"
-          :key="columnDef.id"
-          align="left"
+    <el-col :span="12" :offset="1" v-loading="loading">
+      <div>
+        <div class="title-reserved" v-if="shouldDisplayTableTitle">
+          <h1>表： {{currentTableName}}</h1>
+        </div>
+        <el-table
+          v-if="currentFocusOperation === 3"
+          :data="dataTable"
+          ref="displayData"
+          stripe
+          row-key="id"
+          default-expand-all
         >
+          <el-table-column
+            v-for="(columnDef, index) in dataTableSchema"
+            :prop="columnDef.propName"
+            :label="columnDef.columnName"
+            :key="index"
+            align="left"
+          >
 
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+        </el-table>
+        <el-table
+          v-if="currentFocusOperation === 0"
+          :data="dataTableSchema"
+          ref="displayDataSchema"
+          stripe
+          row-key="id"
+          default-expand-all
+        >
+          <el-table-column
+            prop="columnName"
+            label="列名"
+            align="center"
+          ></el-table-column>
+          <el-table-column
+            prop="columnType"
+            label="类型"
+            align="left"
+          ></el-table-column>
+          <el-table-column
+            prop="columnConstraint"
+            label="约束"
+            align="left"
+          ></el-table-column>
+        </el-table>
+      </div>
     </el-col>
   </el-row>
 </template>
@@ -100,16 +130,15 @@ export default {
         needParam: false
       }],
       dataTable: [],
-      dataTableSchema: [{
-        id: 0,
-        columnName: 'column1',
-        propName: 'prop1'
-      }, {
-        id: 1,
-        columnName: 'column2',
-        propName: 'prop2'
-      }],
-      displayTableTitle: 'industry_table_2'
+      dataTableSchema: [],
+      currentTableName: '',
+      currentFocusOperation: -1,
+      loading: false
+    }
+  },
+  computed: {
+    shouldDisplayTableTitle () {
+      return this.currentFocusOperation === 0 | this.currentFocusOperation === 3
     }
   },
   methods: {
@@ -127,6 +156,9 @@ export default {
                 label: e
               })
             })
+            // if (response.body.result.length > 0) {
+            //   this.currentDatabaseName = response.body.result[0]
+            // }
           } else {
             this.$alert('获取数据库列表失败，请稍后再试！')
           }
@@ -134,7 +166,25 @@ export default {
           this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
         })
     },
-    /*    getDisplayTable () {
+    getDisplayTableSchema (operationId) {
+      this.$http.get('/relational/view-table-schema/', {
+        username: '',
+        databaseName: '',
+        tableName: '',
+        instanceId: 0,
+        encrypted: false
+      }).then(
+        function (response) {
+          this.currentTableName = response.body.result.tableName
+          this.dataTableSchema = response.body.result.schema
+          if (operationId !== undefined) {
+            this.currentFocusOperation = operationId
+            this.loading = false
+          }
+        }
+      )
+    },
+    getDisplayTable (operationId) {
       this.$http.get('/relational/select/', {
         username: '',
         databaseName: '',
@@ -146,21 +196,31 @@ export default {
           if (response.status === 200 && response.body.success) {
             console.log(response.body)
             this.dataTable = response.body.result
+            if (operationId !== undefined) {
+              this.currentFocusOperation = operationId
+              this.loading = false
+            }
           } else {
             this.$alert('获取数据表失败，请稍后再试！')
           }
         }, function (response) {
           this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
         })
-    }, */
-    onClickDeleteDatabase () {
-
     },
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
-        /*        case 5:
-          this.getDisplayTable() */
+        case 0:
+          // schema
+          this.loading = true
+          this.getDisplayTableSchema(0)
+          break
+        case 3:
+          // select
+          this.loading = true
+          this.getDisplayTableSchema()
+          this.getDisplayTable(3)
+          break
       }
     }
   },

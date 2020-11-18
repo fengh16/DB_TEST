@@ -90,11 +90,20 @@ export default {
       status: 200,
       success: true,
       result: {
+        'tableName': 'industry_table_1',
         'schema': [{
-          'columnName': 'col1',
-          'dataType': 'int',
-          'constraint': ['??']
-        }, {}]
+          id: 0,
+          columnName: 'column1',
+          propName: 'prop1',
+          columnType: 'integer',
+          columnConstraint: 'primary key'
+        }, {
+          id: 1,
+          columnName: 'column2',
+          propName: 'prop2',
+          columnType: 'varchar(32)',
+          columnConstraint: ''
+        }]
       },
       log: ['log of view-table-schema']
     }
@@ -123,4 +132,5 @@ export default {
       log: ['log of delete']
     }
   }
+
 }

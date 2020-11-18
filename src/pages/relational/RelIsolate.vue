@@ -1,19 +1,19 @@
 <template>
-  <el-col>
-    <el-row :span="1" class="left-indent from-left margin-top">
-      <el-select v-model="instanceID" placeholder="选择实例">
-        <el-option
-          v-for="item in instanceList"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-        </el-option>
-      </el-select>
-    </el-row>
-    <el-row type='flex' :span="10">
-      <el-col :span="10">
+  <el-row type="flex">
+    <el-col :span="10">
+      <h1>数据隔离测试</h1>
+      <div class="left-indent from-left margin-top">
+        <el-select v-model="instanceID" placeholder="选择实例">
+          <el-option
+            v-for="item in instanceList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
         <div class="from-left left-indent margin-top">
-          <el-table :data="operationTable" border class="margin-top">
+          <el-table :data="operationTable" border class="margin-top" stripe default-expand-all>
             <el-table-column property="operationName" label="操作名称"></el-table-column>
             <el-table-column property="table" label="表名">
               <template slot-scope="scope">
@@ -27,22 +27,42 @@
             </el-table-column>
           </el-table>
         </div>
-      </el-col>
-      <el-col :span="8" :offset="1">
-        <div class="from-left left-indent margin-top" v-if="hasResult">
-          <el-table :data="dataTable" border class="margin-top">
+    </el-col>
+    <el-col :span="8">
+      <h1>查看测试结果</h1>
+        <div class="from-left left-indent margin-top">
+          <el-table :data="dataTable" border class="margin-top" v-if="currentOperationID === 5">
             <el-table-column :label="displayTableTitle" align="center">
-              <el-table-column align="center"
-                v-for="item in dataTableSchema"
-                  :key="item.id"
-                  :label="item.columnName">
+              <el-table-column align="left" row-key="id"
+                v-for="(columnDef, index) in dataTableSchema"
+                  :key="index"
+                  :label="columnDef.columnName"
+                  :prop="columnDef.propName">
               </el-table-column>
             </el-table-column>
           </el-table>
+          <el-table :data="dataTableSchema" border class="margin-top" v-if="currentOperationID === 1">
+            <el-table-column :label="displayTableTitle" align="center">
+              <el-table-column
+                prop="columnName"
+                label="列名"
+                align="center"
+                ></el-table-column>
+              <el-table-column
+                prop="columnType"
+                label="类型"
+                align="left"
+                ></el-table-column>
+              <el-table-column
+                prop="columnConstraint"
+                label="约束"
+                align="left"
+              ></el-table-column>
+            </el-table-column>
+          </el-table>
         </div>
-      </el-col>
-    </el-row>
-  </el-col>
+    </el-col>
+  </el-row>
 </template>
 
 <script>
@@ -106,11 +126,12 @@ export default {
         propName: 'prop2'
       }],
       displayTableTitle: 'table_instance',
-      hasResult: false
+      currentOperationID: -1
     }
   },
   methods: {
     operate (operationID) {
+      this.currentOperationID = operationID
       switch (operationID) {
         case 0:
           // 创建表
@@ -140,20 +161,13 @@ export default {
             tableName: this.tableName[operationID],
             username: '',
             instanceID: this.instanceID,
-            encryptMethod: 'SHA1'
+            encrypted: false
           }).then(
             function (response) {
               if (response.status === 200 && response.body.success) {
                 console.log(response.body)
-                this.dataTableSchema = []
-                this.displayTableTitle = this.tableName[operationID]
-                response.body.result.schema.forEach(e => {
-                  this.dataTableSchema.push({
-                    columnName: e.columnName,
-                    dataType: e.dataType,
-                    constraint: e.constraint
-                  })
-                })
+                this.dataTableSchema = response.body.result.schema
+                this.displayTableTitle = response.body.result.tableName
               } else {
                 this.$alert('查看表信息失败，请稍后再试！')
               }
@@ -234,7 +248,6 @@ export default {
             function (response) {
               if (response.status === 200 && response.body.success) {
                 console.log(response.body)
-                this.hasResult = true
                 this.dataTable = response.body.result
                 this.displayTableTitle = this.tableName[operationID]
                 console.log(this.dataTable)

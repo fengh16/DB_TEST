@@ -2,9 +2,9 @@
   <el-row type="flex">
     <el-col :span="10">
       <div class="left-indent">
-        <h1 class="from-left">身份认证测试</h1>
+        <h1>可操作性功能测试</h1>
         <div class="from-left">
-          <el-select v-model="currentDatabaseName" placeholder="选择数据库">
+          <el-select v-model="currentDatabaseName" placeholder="选择数据库" default-first-option>
             <el-option
               v-for="item in databaseList"
               :key="item.value"
@@ -65,31 +65,62 @@
         </el-table>
       </div>
     </el-col>
-    <el-col :span="12" :offset="1">
-      <h1>{{displayTableTitle}}</h1>
-      <el-table :data="dataTable"
-                ref="displayData"
-                stripe
-                row-key="id"
-                default-expand-all
-      >
-        <el-table-column
-          v-for="(columnDef) in dataTableSchema"
-          :prop="columnDef.propName"
-          :label="columnDef.columnName"
-          :key="columnDef.id"
-          align="left"
+    <el-col :span="12" :offset="1" v-loading="loading">
+      <h1>查看测试结果</h1>
+      <div>
+        <div class="title-reserved" v-if="shouldDisplayTableTitle">
+          <h1>表： {{currentTableName}}</h1>
+        </div>
+        <el-table
+          v-if="currentFocusOperation === 5"
+          :data="dataTable"
+          ref="displayData"
+          stripe
+          row-key="id"
+          default-expand-all
+        >
+          <el-table-column
+            v-for="(columnDef, index) in dataTableSchema"
+            :prop="columnDef.propName"
+            :label="columnDef.columnName"
+            :key="index"
+            align="left"
           >
 
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+        </el-table>
+        <el-table
+          v-if="currentFocusOperation === 1"
+          :data="dataTableSchema"
+          ref="displayDataSchema"
+          stripe
+          row-key="id"
+          default-expand-all
+        >
+          <el-table-column
+            prop="columnName"
+            label="列名"
+            align="center"
+          ></el-table-column>
+          <el-table-column
+            prop="columnType"
+            label="类型"
+            align="left"
+          ></el-table-column>
+          <el-table-column
+            prop="columnConstraint"
+            label="约束"
+            align="left"
+          ></el-table-column>
+        </el-table>
+      </div>
     </el-col>
   </el-row>
 </template>
 
 <script>
 export default {
-  name: 'RelManipulation',
+  name: 'RelOperate',
   data () {
     return {
       databaseList: [],
@@ -135,16 +166,15 @@ export default {
         paramHint: '输入要嵌入的信息'
       }],
       dataTable: [],
-      dataTableSchema: [{
-        id: 0,
-        columnName: 'column1',
-        propName: 'prop1'
-      }, {
-        id: 1,
-        columnName: 'column2',
-        propName: 'prop2'
-      }],
-      displayTableTitle: 'industry_table_2'
+      dataTableSchema: [],
+      currentTableName: '',
+      currentFocusOperation: 0,
+      loading: false
+    }
+  },
+  computed: {
+    shouldDisplayTableTitle () {
+      return this.currentFocusOperation === 1 | this.currentFocusOperation === 5
     }
   },
   methods: {
@@ -162,6 +192,9 @@ export default {
                 label: e
               })
             })
+            // if (response.body.result.length > 0) {
+            //   this.currentDatabaseName = response.body.result[0]
+            // }
           } else {
             this.$alert('获取数据库列表失败，请稍后再试！')
           }
@@ -169,7 +202,25 @@ export default {
           this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
         })
     },
-    getDisplayTable () {
+    getDisplayTableSchema (operationId) {
+      this.$http.get('/relational/view-table-schema/', {
+        username: '',
+        databaseName: '',
+        tableName: '',
+        instanceId: 0,
+        encrypted: false
+      }).then(
+        function (response) {
+          this.currentTableName = response.body.result.tableName
+          this.dataTableSchema = response.body.result.schema
+          if (operationId) {
+            this.currentFocusOperation = operationId
+            this.loading = false
+          }
+        }
+      )
+    },
+    getDisplayTable (operationId) {
       this.$http.get('/relational/select/', {
         username: '',
         databaseName: '',
@@ -181,6 +232,10 @@ export default {
           if (response.status === 200 && response.body.success) {
             console.log(response.body)
             this.dataTable = response.body.result
+            if (operationId) {
+              this.currentFocusOperation = operationId
+              this.loading = false
+            }
           } else {
             this.$alert('获取数据表失败，请稍后再试！')
           }
@@ -201,8 +256,17 @@ export default {
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
+        case 1:
+          // schema
+          this.loading = true
+          this.getDisplayTableSchema(1)
+          break
         case 5:
-          this.getDisplayTable()
+          // select
+          this.loading = true
+          this.getDisplayTableSchema()
+          this.getDisplayTable(5)
+          break
       }
     }
   },
@@ -218,5 +282,8 @@ export default {
   }
   .left-indent {
     margin-left: 40px;
+  }
+  .title-reserved {
+    height: 60px;
   }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <el-row type="flex">
-    <el-col :span="10">
+    <el-col :span="12">
       <div class="left-indent">
         <h1>可操作性功能测试</h1>
         <div class="from-left">
@@ -25,7 +25,7 @@
             prop="title"
             label="操作名称"
             align="left"
-            width="120"
+            width="100"
           ></el-table-column>
           <el-table-column
             prop="tableName"
@@ -44,6 +44,7 @@
             prop="param"
             label="参数"
             align="center"
+            width="200"
           >
             <template slot-scope="scope">
               <el-input
@@ -57,6 +58,7 @@
           <el-table-column
             label="操作"
             align="center"
+            width="80"
           >
             <template slot-scope="scope">
               <el-button type="primary" size="mini" plain @click="onExecute(scope.row.id)">执行</el-button>
@@ -75,15 +77,26 @@
           <el-button type="primary" @click="onClickNewDatabaseSubmit">创 建</el-button>
         </div>
       </el-dialog>
+      <el-dialog title="信息嵌入" :visible.sync="embeddingDialogShow">
+        <el-form>
+          <el-form-item label="要嵌入的信息">
+            <el-input v-model="embeddingString" autocomplete="off" placeholder="输入要嵌入的信息"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="embeddingDialogShow=false">取 消</el-button>
+          <el-button type="primary" @click="onClickEmbeddingSubmit">执 行</el-button>
+        </div>
+      </el-dialog>
     </el-col>
-    <el-col :span="12" :offset="1" v-loading="loading">
+    <el-col :span="12" v-loading="loading">
       <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
           <h1>表： {{currentTableName}}</h1>
         </div>
         <el-table
-          v-if="currentFocusOperation === 5"
+          v-if="shouldDisplayDataTable"
           :data="dataTable"
           ref="displayData"
           stripe
@@ -95,7 +108,7 @@
             :prop="columnDef.propName"
             :label="columnDef.columnName"
             :key="index"
-            align="left"
+            align="center"
           >
 
           </el-table-column>
@@ -145,7 +158,7 @@ export default {
         paramHint: ''
       }, {
         id: 1,
-        title: '查看表元数据',
+        title: '查看表信息',
         tableName: '',
         needParam: false
       }, {
@@ -182,12 +195,17 @@ export default {
       currentFocusOperation: 0,
       loading: false,
       newDatabaseName: '',
-      newDatabaseDialogShow: false
+      newDatabaseDialogShow: false,
+      embeddingString: '',
+      embeddingDialogShow: false
     }
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 1 | this.currentFocusOperation === 5
+      return this.currentFocusOperation === 1 | this.currentFocusOperation === 5 | this.currentFocusOperation === 6
+    },
+    shouldDisplayDataTable () {
+      return this.currentFocusOperation === 5 || this.currentFocusOperation === 6
     }
   },
   methods: {
@@ -286,6 +304,28 @@ export default {
         this.$alert('创建数据库失败：没有权限')
       }
     },
+    onClickEmbeddingSubmit () {
+      this.embeddingDialogShow = false
+      this.loading = true
+      this.$http.get('/relational/select-embedding/', {
+        params: {
+          embedding: this.embeddingString
+        }
+      }).then((response) => {
+        if (response.status === 200 && response.body.success) {
+          console.log(response.body)
+          this.dataTable = response.body.result
+          this.currentFocusOperation = 6
+          this.loading = false
+          console.log(this.currentFocusOperation, this.dataTable, this.currentTableName)
+        } else {
+          this.$alert('获取数据表失败，请稍后再试！')
+        }
+      }, (response) => {
+        this.loading = false
+        this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
+      })
+    },
     onClickCreateDatabase () {
       this.newDatabaseDialogShow = true
     },
@@ -309,6 +349,11 @@ export default {
           this.loading = true
           this.getDisplayTableSchema()
           this.getDisplayTable(5)
+          break
+        case 6:
+          // select embedding
+          this.embeddingDialogShow = true
+          this.getDisplayTableSchema()
           break
       }
     }

@@ -14,16 +14,16 @@
         <el-button type="primary" plain @click="onClickDecode">解密</el-button>
       </div>
         <div class="from-left left-indent margin-top">
-          <el-table :data="operationTable" border class="margin-top" stripe default-expand-all>
-            <el-table-column property="operationName" label="操作名称"></el-table-column>
-            <el-table-column property="table" label="表名">
+          <el-table :data="operationTable" class="margin-top" stripe default-expand-all>
+            <el-table-column property="operationName" label="操作名称" align="left"></el-table-column>
+            <el-table-column property="table" label="表名" align="center">
               <template slot-scope="scope">
-                <el-input v-model="tableName[scope.$index]" type="text"></el-input>
+                <el-input v-model="tableName[scope.$index]" type="text"  placeholder="输入表名"></el-input>
               </template>
             </el-table-column>
-            <el-table-column property="operate" label="操作">
+            <el-table-column property="operate" label="操作" align="center">
               <template slot-scope="scope">
-                <el-button @click="operate(scope.$index)" type="text">执行</el-button>
+                <el-button @click="operate(scope.$index)" type="primary" size="mini" plain>执行</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -32,7 +32,7 @@
     <el-col :span="8">
       <h1>查看测试结果</h1>
         <div class="from-left left-indent margin-top">
-          <el-table :data="dataTable" border class="margin-top" v-if="currentOperationID === 1">
+          <el-table :data="dataTable" class="margin-top" v-if="currentOperationID === 1">
             <el-table-column :label="displayTableTitle" align="center">
               <el-table-column align="left" row-key="id"
                 v-for="(columnDef, index) in dataTableSchema"
@@ -42,7 +42,7 @@
               </el-table-column>
             </el-table-column>
           </el-table>
-          <el-table :data="dataTableSchema" border class="margin-top" v-if="currentOperationID === 0">
+          <el-table :data="dataTableSchema" class="margin-top" v-if="currentOperationID === 0">
             <el-table-column :label="displayTableTitle" align="center">
               <el-table-column
                 prop="columnName"

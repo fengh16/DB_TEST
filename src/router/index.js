@@ -8,6 +8,8 @@ import KnowGraphPage from '@/pages/graph/GraphKnow'
 import RelMigration from '@/pages/relational/RelMigration'
 import RelRecover from '@/pages/relational/RelRecover'
 import RelDestroy from '@/pages/relational/RelDestroy'
+import RelOperate from '@/pages/relational/RelOperate'
+import ControlRalationPage from '@/pages/relational/RelControl'
 import NotFound from '@/pages/NotFound'
 import RelOperate from '../pages/relational/RelOperate'
 
@@ -25,6 +27,11 @@ export default new Router({
       path: '/relation/Isolate_2',
       name: '关系数据隔离',
       component: IsolateRelationPage
+    },
+    {
+      path: '/relation/Control_3',
+      name: '关系安全控制',
+      component: ControlRalationPage
     },
     {
       path: '/relation/Know_5',

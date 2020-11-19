@@ -13,7 +13,7 @@
             </el-option>
           </el-select>
           <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
-          <el-button type="primary" plain @click="onDebug">DEBUG</el-button>
+<!--          <el-button type="primary" plain @click="onDebug">DEBUG</el-button>-->
         </div>
         <el-table :data="operationTable"
                   ref="operations"
@@ -64,6 +64,17 @@
           </el-table-column>
         </el-table>
       </div>
+      <el-dialog title="创建数据库" :visible.sync="newDatabaseDialogShow">
+        <el-form>
+          <el-form-item label="数据库名">
+            <el-input v-model="newDatabaseName" autocomplete="off" placeholder="输入新数据库名称"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="newDatabaseDialogShow=false">取 消</el-button>
+          <el-button type="primary" @click="onClickNewDatabaseSubmit">创 建</el-button>
+        </div>
+      </el-dialog>
     </el-col>
     <el-col :span="12" :offset="1" v-loading="loading">
       <h1>查看测试结果</h1>
@@ -169,7 +180,9 @@ export default {
       dataTableSchema: [],
       currentTableName: '',
       currentFocusOperation: 0,
-      loading: false
+      loading: false,
+      newDatabaseName: '',
+      newDatabaseDialogShow: false
     }
   },
   computed: {
@@ -243,8 +256,38 @@ export default {
           this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
         })
     },
+    onClickNewDatabaseSubmit () {
+      let newDatabaseName = this.newDatabaseName
+      console.log(this.newDatabaseName)
+      this.newDatabaseDialogShow = false
+      let authed = true
+      this.GLOBAL.privilegeList.forEach((e) => {
+        if (e.title === '创建数据库权限') {
+          if (!e.userAuth[this.GLOBAL.username]) {
+            authed = false
+          }
+        }
+      })
+      if (authed) {
+        this.$http.post('/relational/create-database/', {
+          params: {
+            databaseName: newDatabaseName,
+            username: ''
+          }
+        }).then(response => {
+          this.GLOBAL.databaseList.push(newDatabaseName)
+          this.databaseList.push({
+            value: newDatabaseName,
+            label: newDatabaseName
+          })
+          this.$alert('创建数据库成功！')
+        })
+      } else {
+        this.$alert('创建数据库失败：没有权限')
+      }
+    },
     onClickCreateDatabase () {
-
+      this.newDatabaseDialogShow = true
     },
     onDebug () {
       let tableNames = []

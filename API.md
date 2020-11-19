@@ -42,6 +42,7 @@ response = {
     }
 }
 ```
+后端：如果用户名和密码匹配，返回登录成功，同时 `usertype` 中体现用户级别，否则失败
 
 2. 退出登录
 
@@ -63,6 +64,8 @@ response = {
     }
 }
 ```
+
+后端：退出登录，设置该用户的登录状态为离线
 
 ### 关系数据服务
 
@@ -87,6 +90,8 @@ response = {
 }
 ```
 
+后端：根据保存的用户名和密码进行认证，无需返回log
+
 4. 获取可管理的用户列表
 
 ```python
@@ -104,6 +109,8 @@ response = {
     }
 }
 ```
+
+后端：`result` 每个元素是一个用户名，如 `result = ['admin', 'developer1', 'developer2']`
 
 5. 获取可管理的权限列表（deprecated）
 
@@ -159,6 +166,8 @@ response = {
 }
 ```
 
+后端：`result` 是一个列表，第一个元素是全局系列权限（包括创建、访问、更改、删除数据库），后面每个元素是一个数据库中的系列权限（如在数据库a中创建、访问、更改、删除表）；每个元素的字段有：`caseId` 表示元素的id，`title` 表示这个系列的名字，即表头，第一个元素的 `title` 应是 `"全局权限管理"` ；`children` 是一个列表，表示这个系列中包含的权限项，这其中每个孩子的字段有： `itemId` 表示权限的id，`title` 表示权限的名字，即这一行的第一列标题， `granted` 是一个对象，其中对每个用户名有一个bool变量表示授权与否
+
 7. 更新用户权限
 
 ```python
@@ -192,6 +201,8 @@ response = {
 }
 ```
 
+后端：请求的body中包含一个与上一个API返回值相同格式的对象，表示更改后的所有权限，后端接受这个对象并且更新各个权限
+
 8. 创建数据库
 
 ```python
@@ -213,6 +224,8 @@ response = {
     }
 }
 ```
+
+后端：为用户 `username` 的第 `instanceId` 个实例创建一个名为 `databaseName` 的数据库，如果没有权限则不创建并返回提示
 
 9. 创建表
 
@@ -236,6 +249,8 @@ response = {
     }
 }
 ```
+
+后端：为用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库创建一个名为 `tableName` 的表，表的字段后端可以预设，如果没有权限则不创建并返回提示
 
 10. 查看表结构信息
 
@@ -265,6 +280,8 @@ response = {
 }
 ```
 
+后端：返回用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表的schema信息，存储在 `result.schema` 字段中，这是一个列表，每个元素是一个对象，对象包括三个字段：`columnName` 表示该列的列名，`dataType` 表示该类的类型，字符串格式，`constraint` 为该列的约束，如primary key，not null等，是一个字符串的列表，如果没有约束则为空列表
+
 11. 插入数据
 
 ```python
@@ -287,6 +304,8 @@ response = {
     }
 }
 ```
+
+后端：为用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表插入一行数据，数据内容后端可以预设，如果没有权限则不创建并返回提示
 
 12. 更新数据
 
@@ -311,6 +330,8 @@ response = {
 }
 ```
 
+后端：为用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表更新一列数据，数据内容后端可以预设，如果没有权限则不更新并返回提示
+
 13. 删除数据
 
 ```python
@@ -334,6 +355,8 @@ response = {
 }
 ```
 
+后端：为用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表删除一行数据，删除的行内容后端可以预设，如果没有权限则不删除并返回提示
+
 14. 查看数据
 
 ```python
@@ -350,11 +373,17 @@ param = {
 response = {
     200: {
         "success": bool,
-        "result": [tuple],
+        "result": [{
+            "id": 0,
+            "prop1": "value1",
+            "prop2": "value2"
+        }],
         "log": [str]
     }
 }
 ```
+
+后端：返回用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表的数据，保存在 `result` 中， `result` 是一个对象的列表，每个元素是一行数据，包含 `id` 表示该行的id，这个 `id` 不是数据库中的属性，可以后端来指定，其余的键值对是数据库中的 `列名: 值` 的形式，列名和API 10中返回的应该保持一致，如果没有权限则不返回并提示。此外，如果请求 `body` 中 `encrypted` 不为空串，返回用 `encrpyted` 值的算法进行加密后的结果（不清楚这个加密后的结果是否还是对象的格式，或者是一个二进制串，如果是后者，就直接返回也可以，无需改成对象）
 
 15. 对数据进行嵌入，查看嵌入后的数据
 
@@ -373,11 +402,13 @@ param = {
 response = {
     200: {
         "success": bool,
-        "result": [tuple],
+        "result": [{}],
         "log": [str]
     }
 }
 ```
+
+后端：对用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表的数据进行嵌入，要嵌入的信息是 `embedding` 字段的字符串，返回嵌入后的表，格式与上一个API相同。如果用户没有被授予表修改权限，也不执行嵌入
 
 16. 删除表
 
@@ -402,6 +433,8 @@ response = {
 }
 ```
 
+后端：删除用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表，如果没有权限则不删除并返回提示
+
 17. 删除数据库
 
 ```python
@@ -424,6 +457,8 @@ response = {
 }
 ```
 
+后端：删除用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库，如果没有权限则不删除并返回提示
+
 18. 查看数据服务信息
 
 ```python
@@ -435,12 +470,19 @@ response = {
     200: {
         "success": bool,
         "result": {
-            "...": str,
+            "IP": str,
+            "MAC": str,
+            "serviceDir": str,
+            "dataDir": str,
+            "dataAmount": str,
+            "space": str
         },
         "log": [str]
     }
 }
 ```
+
+后端：返回关系数据服务的信息，目前暂时约定包括上面字段：IP地址，MAC地址，服务程序目录，数据存储位置，数据量，服务器可用空间，全部用字符串的格式返回
 
 19. 数据导入到一个表
 
@@ -467,6 +509,8 @@ response = {
 }
 ```
 
+后端：将名为 `filename` 的文件中的数据导入到用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表中，导入的方式有 `sql` 和 `shell` 两种，在请求的 `method` 字段中指定，如果没有修改权限则不导入并报错
+
 20. 数据导出到一个文件
 
 ```python
@@ -491,6 +535,8 @@ response = {
     }
 }
 ```
+
+后端：将用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表的数据导出到名为 `filename` 的文件中，导出的方式有 `sql` 和 `shell` 两种，在请求的 `method` 字段中指定，如果没有查看权限则不导出并报错
 
 21. 表结构导出到一个文件
 
@@ -517,6 +563,8 @@ response = {
 }
 ```
 
+后端：将用户 `username` 的第 `instanceId` 个实例的名为 `databaseName` 的数据库的名为 `tableName` 的表的schema导出到名为 `filename` 的文件中，导出的方式只有 `shell` 一种，在请求的 `method` 字段中指定，如果没有查看权限则不导出并报错
+
 22. 查看一个文件的内容（文件存储的是一个表的数据）
 
 ```python
@@ -536,6 +584,8 @@ response = {
 }
 ```
 
+后端：查看文件 `filename` 的内容，存储于 `result` 字段中，是一个字符串的列表，每个元素表示文件中的一行，返回文本即可
+
 23. 查看日志
 
 ```python
@@ -554,13 +604,16 @@ response = {
 }
 ```
 
+后端：这个接口暂且弃用
+
 24. 列出当前所有数据库
 
 ```python
 'GET /relational/list-database'
 
 param = {
-    "username": str
+    "username": str,
+    "instanceId": str
 }
 
 response = {
@@ -571,3 +624,5 @@ response = {
     }
 }
 ```
+
+后端：列出用户 `username` 的第 `instanceId` 个实例的所有数据库，存储于 `result` 字段中，是一个字符串的列表，每个元素是一个数据库名

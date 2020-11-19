@@ -69,6 +69,21 @@ export default {
       }]
     }
   },
+  'get|/relational/select-embedding/': option => {
+    return {
+      status: 200,
+      success: true,
+      result: [{
+        id: 0,
+        prop1: 'row1, col1',
+        prop2: 'row1, col2'
+      }, {
+        id: 1,
+        prop1: 'row2, col1',
+        prop2: 'row2, col2'
+      }]
+    }
+  },
   'post|/relational/create-database': option => {
     return {
       status: 200,
@@ -154,13 +169,6 @@ export default {
             administrator: true,
             developer1: true,
             developer2: true
-          }}, {
-          itemId: 2,
-          title: '更改数据库权限',
-          granted: {
-            administrator: true,
-            developer1: true,
-            developer2: false
           }}, {
           itemId: 3,
           title: '删除数据库权限',

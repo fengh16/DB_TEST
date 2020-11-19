@@ -7,6 +7,8 @@ import App from './App'
 import router from './router'
 import globalVariable from '@/global_var'
 import VueResource from 'vue-resource'
+import './css/global.css'
+
 require('./mock')
 
 Vue.config.productionTip = false

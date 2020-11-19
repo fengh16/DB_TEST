@@ -1,51 +1,50 @@
 <template>
   <div id="app">
     <el-container v-if="loggedIn">
-      <el-aside width="200px">
-        <!-- left menu -->
-        <el-menu
-          default-active="relation"
-          class="el-menu-vertical-demo"
-          @select="selectVertical"
-          background-color="#545c64"
-          text-color="#fff"
-          active-text-color="#ffd04b"
-          style="height: 100%; margin-bottom: 50px; padding-top: 50px">
-          <el-menu-item index="relation">
-            <i class="el-icon-menu"></i>
-            <span slot="title">关系数据服务</span>
-          </el-menu-item>
-          <el-menu-item index="graph">
-            <i class="el-icon-menu"></i>
-            <span slot="title">图数据服务</span>
-          </el-menu-item>
-          <el-menu-item index="other">
-            <i class="el-icon-menu"></i>
-            <span slot="title">……</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <!-- right part -->
-      <el-container>
-        <el-main>
-          <el-row style="height: 50px">
-            <el-col :span="16"><h1>{{ this.GLOBAL.systemName }}</h1></el-col>
-            <el-col :span="8">
-              <el-dropdown @command="userCommand">
+      <el-header>
+        <el-row type="flex" class="app-header-row">
+          <el-col :span="16"><h2>{{ this.GLOBAL.systemName }}</h2></el-col>
+          <el-col :span="8" style="text-align: center;">
+            <el-dropdown @command="userCommand" style="position: relative; top: 50%; transform: translateY(-50%);">
                 <span class="el-dropdown-link">
-                  <!--{{ userAdmin ? '管理员': '普通用户' }}/{{ userName }}<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
+                  <!--{{ userAdmin ? '管理员': '普通用户' }}/{{ userName }}<i class="el-icon-arrow-down el-icon--right"></i>-->
                   {{ userName }}<i class="el-icon-arrow-down el-icon--right"></i>
                 </span>
-                <el-dropdown-menu slot="dropdown">
-                  <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
-                  <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
-            </el-col>
-          </el-row>
-          <el-row>
+              <el-dropdown-menu slot="dropdown">
+                <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
+                <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
 
-            <el-col :span="12" style="margin-top: 10px"><hr><h1>工业{{ getSubTitle() }}数据管理服务</h1></el-col>
+          </el-col>
+        </el-row>
+      </el-header>
+      <el-container>
+        <el-aside width="240px" class="app-sidebar">
+          <!-- left menu -->
+          <el-menu
+            default-active="relation"
+            class="el-menu-vertical-demo"
+            @select="selectVertical"
+            background-color="#ffffff"
+            text-color="#404040"
+            active-text-color="#409eff"
+            style="height: 100%; margin-bottom: 50px; padding-top: 50px">
+            <el-menu-item
+              v-for="(item, i) in asideMenuItemProps"
+              :key="i"
+              :index="item.index"
+              class="aside-menu-item">
+              <template slot-scope="scope">
+                <i class="el-icon-takeaway-box"></i>
+                <span slot="title">{{item.title}}</span>
+              </template>
+            </el-menu-item>
+          </el-menu>
+        </el-aside>
+        <el-main>
+          <el-row>
+            <el-col :span="12" style="margin-top: 10px"><h1>工业{{ getSubTitle() }}数据管理服务</h1></el-col>
             <el-col :span="12">
               <el-button type="primary" plain @click="doAuth" v-if="!authed">身份认证</el-button>
               <el-button type="primary" plain @click="cancelAuth" v-else>取消认证</el-button>
@@ -64,7 +63,6 @@
           </el-menu>
           <router-view v-if="authed"/>
           <h1 v-else>请先进行身份认证！</h1>
-          <!--          <div class="unable"></div>-->
         </el-main>
       </el-container>
     </el-container>
@@ -121,7 +119,35 @@ export default {
       formLabelWidth: '80px',
       authed: false,
       loggedIn: false,
-      showLogin: true
+      showLogin: true,
+      asideMenuItemProps: [{
+        index: 'relation',
+        title: '关系数据管理服务'
+      }, {
+        index: 'graph',
+        title: '图数据管理服务'
+      }, {
+        index: 'timeSeries',
+        title: '时序数据管理服务'
+      }, {
+        index: 'document',
+        title: '文档数据管理服务'
+      }, {
+        index: 'columnOriented',
+        title: '列式数据管理服务'
+      }, {
+        index: 'keyValue',
+        title: '键值对数据管理服务'
+      }, {
+        index: 'event',
+        title: '事件数据管理服务'
+      }, {
+        index: 'message',
+        title: '消息队列数据管理服务'
+      }, {
+        index: 'blob',
+        title: '二进制大对象数据管理服务'
+      }]
     }
   },
   methods: {
@@ -277,6 +303,35 @@ export default {
     text-align: center;
     color: #2c3e50;
     /*margin-top: 60px;*/
+  }
+  .app-sidebar {
+    /*display: block;*/
+    height: 100vh;
+    position: relative;
+    overflow-y: hidden;
+  }
+  .app-sidebar ul {
+    padding-top: 0 !important;
+  }
+  .aside-menu-item {
+    text-align: left;
+  }
+  .el-dropdown-link {
+    cursor: pointer;
+    color: #f0f0f0;
+  }
+  .el-dropdown-link:hover {
+    color: #409eff;
+  }
+  /*.app-header-row {*/
+  /*  background-color: #212529;*/
+  /*}*/
+  .el-header {
+    height: 70px !important;
+    background-color: #545c68;
+  }
+  .el-header h2 {
+    color: #f0f0f0;
   }
   /*.unable {*/
   /*  position: fixed;*/

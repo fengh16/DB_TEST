@@ -2,10 +2,9 @@
   <el-row type="flex">
     <el-col :span="20">
       <div class="left-indent">
-        <h1>权限管理功能测试</h1>
+        <h1>权限管理测试</h1>
         <div class="from-left">
           <p v-if="this.GLOBAL.username!=='administrator'">无权查看此页面</p>
-<!--          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>-->
           <el-button v-if="this.GLOBAL.username==='administrator'" type="primary" plain @click="onSavePrivilegeSetting">保存</el-button>
         </div>
         <el-table

@@ -13,54 +13,66 @@
         </el-select>
       </div>
         <div class="from-left left-indent margin-top">
-          <el-table :data="operationTable" border class="margin-top" stripe default-expand-all>
-            <el-table-column property="operationName" label="操作名称"></el-table-column>
-            <el-table-column property="table" label="表名">
+          <el-table :data="operationTable"
+                    class="margin-top"
+                    stripe
+                    default-expand-all>
+            <el-table-column
+              property="operationName"
+              label="操作名称"
+              align="left"
+            ></el-table-column>
+            <el-table-column
+              property="table"
+              label="表名"
+              align="center">
               <template slot-scope="scope">
-                <el-input v-model="tableName[scope.$index]" type="text"></el-input>
+                <el-input v-model="tableName[scope.$index]" type="text" placeholder="输入表名"></el-input>
               </template>
             </el-table-column>
-            <el-table-column property="operate" label="操作">
+            <el-table-column
+              property="operate"
+              label="操作"
+              align="center">
               <template slot-scope="scope">
-                <el-button @click="operate(scope.$index)" type="text">执行</el-button>
+                <el-button @click="operate(scope.$index)" type="primary" size="mini" plain>执行</el-button>
               </template>
             </el-table-column>
           </el-table>
         </div>
     </el-col>
-    <el-col :span="8">
+    <el-col :span="12">
       <h1>查看测试结果</h1>
-        <div class="from-left left-indent margin-top">
-          <el-table :data="dataTable" border class="margin-top" v-if="currentOperationID === 5">
-            <el-table-column :label="displayTableTitle" align="center">
-              <el-table-column align="left" row-key="id"
-                v-for="(columnDef, index) in dataTableSchema"
-                  :key="index"
-                  :label="columnDef.columnName"
-                  :prop="columnDef.propName">
-              </el-table-column>
-            </el-table-column>
-          </el-table>
-          <el-table :data="dataTableSchema" border class="margin-top" v-if="currentOperationID === 1">
-            <el-table-column :label="displayTableTitle" align="center">
-              <el-table-column
-                prop="columnName"
-                label="列名"
-                align="center"
-                ></el-table-column>
-              <el-table-column
-                prop="columnType"
-                label="类型"
-                align="left"
-                ></el-table-column>
-              <el-table-column
-                prop="columnConstraint"
-                label="约束"
-                align="left"
-              ></el-table-column>
-            </el-table-column>
-          </el-table>
+      <div>
+        <div class="title-reserved" v-if="shouldDisplayTableTitle">
+          <h1>表： {{displayTableTitle}}</h1>
         </div>
+        <el-table :data="dataTable" v-if="currentOperationID === 5">
+          <el-table-column align="center" row-key="id"
+            v-for="(columnDef, index) in dataTableSchema"
+              :key="index"
+              :label="columnDef.columnName"
+              :prop="columnDef.propName">
+          </el-table-column>
+        </el-table>
+        <el-table :data="dataTableSchema" v-if="currentOperationID === 1">
+          <el-table-column
+            prop="columnName"
+            label="列名"
+            align="center"
+            ></el-table-column>
+          <el-table-column
+            prop="columnType"
+            label="类型"
+            align="left"
+            ></el-table-column>
+          <el-table-column
+            prop="columnConstraint"
+            label="约束"
+            align="left"
+          ></el-table-column>
+        </el-table>
+      </div>
     </el-col>
   </el-row>
 </template>
@@ -77,9 +89,6 @@ export default {
       }, {
         value: 2,
         label: '实例二'
-      }, {
-        value: 3,
-        label: '...'
       }],
       tableName: ['', '', '', '', '', ''], // 分别对应六个操作的输入表名
       operationTable: [{
@@ -125,7 +134,7 @@ export default {
         columnName: 'column2',
         propName: 'prop2'
       }],
-      displayTableTitle: 'table_instance',
+      displayTableTitle: '',
       currentOperationID: -1
     }
   },
@@ -266,6 +275,11 @@ export default {
       return 'prop' + String(index)
     }
   },
+  computed: {
+    shouldDisplayTableTitle () {
+      return this.currentOperationID === 1 | this.currentOperationID === 5
+    }
+  },
   created () {
     // this.createDatabase()
   }
@@ -281,5 +295,8 @@ export default {
   }
   .margin-top {
     margin-top: 20px;
+  }
+  .title-reserved {
+    height: 60px;
   }
 </style>

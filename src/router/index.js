@@ -11,7 +11,6 @@ import RelDestroy from '@/pages/relational/RelDestroy'
 import RelOperate from '@/pages/relational/RelOperate'
 import ControlRalationPage from '@/pages/relational/RelControl'
 import NotFound from '@/pages/NotFound'
-import RelOperate from '../pages/relational/RelOperate'
 
 Vue.use(Router)
 

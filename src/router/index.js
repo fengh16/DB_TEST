@@ -5,9 +5,13 @@ import KnowRelationPage from '@/pages/relational/RelKnow'
 import IsolateRelationPage from '@/pages/relational/RelIsolate'
 import AuthGraphPage from '@/pages/graph/GraphAuth'
 import KnowGraphPage from '@/pages/graph/GraphKnow'
+import RelMigration from '@/pages/relational/RelMigration'
+import RelRecover from '@/pages/relational/RelRecover'
+import RelDestroy from '@/pages/relational/RelDestroy'
 import RelOperate from '@/pages/relational/RelOperate'
 import ControlRalationPage from '@/pages/relational/RelControl'
 import NotFound from '@/pages/NotFound'
+import RelOperate from '../pages/relational/RelOperate'
 
 Vue.use(Router)
 
@@ -48,6 +52,21 @@ export default new Router({
       path: '/relation/Operate_4',
       name: '关系可操作性',
       component: RelOperate
+    },
+    {
+      path: '/relation/Migrate_6',
+      name: '关系可迁移性',
+      component: RelMigration
+    },
+    {
+      path: '/relation/Recover_7',
+      name: '关系可恢复性',
+      component: RelRecover
+    },
+    {
+      path: '/relation/Destroy_8',
+      name: '关系可销毁性',
+      component: RelDestroy
     },
     {
       path: '/404',

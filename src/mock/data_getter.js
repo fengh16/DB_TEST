@@ -161,21 +161,27 @@ export default {
           granted: {
             administrator: true,
             developer1: true,
-            developer2: false
+            developer2: false,
+            developer3: true,
+            developer4: false
           }}, {
           itemId: 1,
           title: '访问数据库权限',
           granted: {
             administrator: true,
             developer1: true,
-            developer2: true
+            developer2: true,
+            developer3: true,
+            developer4: false
           }}, {
           itemId: 3,
           title: '删除数据库权限',
           granted: {
             administrator: true,
             developer1: true,
-            developer2: false
+            developer2: false,
+            developer3: true,
+            developer4: false
           }
         }]
       }]

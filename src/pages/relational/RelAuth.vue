@@ -51,7 +51,7 @@ export default {
     return {
       operationTable: [],
       operationTableTitle: '',
-      userList: ['administrator', 'developer1', 'developer2']
+      userList: ['administrator', 'developer1', 'developer2', 'developer3', 'developer4']
     }
   },
   methods: {

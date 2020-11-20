@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-container v-if="loggedIn">
+    <el-container v-if="loggedIn" v-loading="appLogging">
       <el-header>
         <el-row type="flex" class="app-header-row">
           <el-col :span="16"><h2>{{ this.GLOBAL.systemName }}</h2></el-col>
@@ -12,6 +12,7 @@
                 </span>
               <el-dropdown-menu slot="dropdown">
                 <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
+                <el-dropdown-item v-for="(username, i) in userList" :key="i" :command="i">{{username}}</el-dropdown-item>
                 <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
@@ -120,6 +121,8 @@ export default {
       authed: false,
       loggedIn: false,
       showLogin: true,
+      appLogging: false,
+      userList: ['administrator', 'developer1', 'developer2', 'developer3', 'developer4'],
       asideMenuItemProps: [{
         index: 'relation',
         title: '关系数据管理服务'
@@ -191,6 +194,8 @@ export default {
     },
     login: function () {
       let nowUsername = this.inputUserName // prevent the change of username during the request
+      this.appLogging = true
+      let _this = this
       this.$http.post('/login/', {
         username: this.inputUserName,
         password: this.password
@@ -211,8 +216,10 @@ export default {
           } else {
             this.$alert('登录失败，请检查用户名与密码并稍后再试！')
           }
+          _this.appLogging = false
         }, function (response) {
           this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
+          _this.appLogging = false
         })
     },
     doAuth: function () {
@@ -266,6 +273,44 @@ export default {
     userCommand (item) {
       if (item === 'logout') {
         this.doLogout()
+      } else {
+        let newUsername = this.userList[parseInt(item)]
+        let password = newUsername
+        console.log(item, newUsername)
+        this.authed = false
+        this.loggedIn = false
+        document.cookie = 'username='
+        document.cookie = 'authed='
+        this.userName = ''
+        this.GLOBAL.username = ''
+        this.showLogin = false
+        this.appLogging = true
+        let _this = this
+        this.$http.post('/login/', {
+          username: newUsername,
+          password: password
+        }).then((response) => {
+          if (response.status === 200 && response.body.result === '登录成功') {
+            if (response.body.usertype === '管理员') {
+              this.userAdmin = true
+            } else {
+              this.userAdmin = false
+            }
+            this.userName = newUsername
+            this.password = password
+            this.GLOBAL.username = newUsername
+            document.cookie = 'username=' + newUsername
+            this.loggedIn = true
+            this.showLogin = false
+            console.log(this.userName, this.password)
+          } else {
+            this.$alert('登录失败，请检查用户名与密码并稍后再试！')
+          }
+          _this.appLogging = false
+        }, (response) => {
+          this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
+          _this.appLogging = false
+        })
       }
     }
   },

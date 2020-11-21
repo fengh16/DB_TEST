@@ -2,17 +2,19 @@
   <el-row type="flex">
     <el-col :span="10">
       <div class="left-indent">
+        <h1>可恢复性测试</h1>
         <el-table :data="operationTable"
                   ref="operations"
                   stripe
                   row-key="id"
                   default-expand-all
+                  class="margin-top"
         >
           <el-table-column
             prop="title"
             label="操作名称"
             align="left"
-            width="220"
+            width="160"
           ></el-table-column>
           <el-table-column
             prop="tableName"
@@ -30,6 +32,7 @@
           <el-table-column
             label="操作"
             align="center"
+            width="80"
           >
             <template slot-scope="scope">
               <el-button type="primary" size="mini" plain @click="onExecute(scope.row.id)">执行</el-button>
@@ -39,6 +42,7 @@
       </div>
     </el-col>
     <el-col :span="12" :offset="1" v-loading="loading">
+      <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
           <h1>表： {{currentTableName}}</h1>
@@ -75,12 +79,12 @@ export default {
       currentDatabaseName: '',
       operationTable: [{
         id: 0,
-        title: 'dump命令备份所有数据库的结构和数据',
+        title: 'dump命令备份数据',
         tableName: '',
         needParam: false
       }, {
         id: 1,
-        title: 'import命令恢复',
+        title: 'import命令恢复数据',
         tableName: '',
         needParam: false
       }, {
@@ -166,7 +170,10 @@ export default {
 </script>
 
 <style scoped>
-.left-indent {
-  margin-left: 40px;
-}
+  .margin-top {
+    margin-top: 20px;
+  }
+  .left-indent {
+    margin-left: 40px;
+  }
 </style>

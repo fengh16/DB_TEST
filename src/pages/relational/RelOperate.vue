@@ -1,8 +1,8 @@
 <template>
   <el-row type="flex">
-    <el-col :span="12">
+    <el-col :span="10">
       <div class="left-indent">
-        <h1>可操作性功能测试</h1>
+        <h1>可操作性测试</h1>
         <div class="from-left">
           <el-select v-model="currentDatabaseName" placeholder="选择数据库" default-first-option>
             <el-option
@@ -20,6 +20,7 @@
                   stripe
                   row-key="id"
                   default-expand-all
+                  class="margin-top"
         >
           <el-table-column
             prop="title"
@@ -40,21 +41,21 @@
               </el-input>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="param"
-            label="参数"
-            align="center"
-            width="200"
-          >
-            <template slot-scope="scope">
-              <el-input
-                v-if="scope.row.needParam"
-                :placeholder="scope.row.paramHint"
-                v-model="scope.row.param"
-                clearable>
-              </el-input>
-            </template>
-          </el-table-column>
+<!--          <el-table-column-->
+<!--            prop="param"-->
+<!--            label="参数"-->
+<!--            align="center"-->
+<!--            width="200"-->
+<!--          >-->
+<!--            <template slot-scope="scope">-->
+<!--              <el-input-->
+<!--                v-if="scope.row.needParam"-->
+<!--                :placeholder="scope.row.paramHint"-->
+<!--                v-model="scope.row.param"-->
+<!--                clearable>-->
+<!--              </el-input>-->
+<!--            </template>-->
+<!--          </el-table-column>-->
           <el-table-column
             label="操作"
             align="center"
@@ -89,7 +90,7 @@
         </div>
       </el-dialog>
     </el-col>
-    <el-col :span="12" v-loading="loading">
+    <el-col :span="12" :offset="1" v-loading="loading">
       <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
@@ -105,7 +106,7 @@
         >
           <el-table-column
             v-for="(columnDef, index) in dataTableSchema"
-            :prop="columnDef.propName"
+            :prop="columnDef.columnName"
             :label="columnDef.columnName"
             :key="index"
             align="center"
@@ -168,12 +169,12 @@ export default {
         needParam: false
       }, {
         id: 3,
-        title: '删除数据',
+        title: '更新数据',
         tableName: '',
         needParam: false
       }, {
         id: 4,
-        title: '更新数据',
+        title: '删除数据',
         tableName: '',
         needParam: false
       }, {
@@ -210,111 +211,132 @@ export default {
   },
   methods: {
     getDatabaseList () {
+      let _this = this
       this.$http.get('/relational/list-database/', {
-        username: ''
+        params: {
+          username: this.GLOBAL.username,
+          instanceId: 0
+        }
       }).then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            this.databaseList = []
-            response.body.result.forEach(e => {
-              this.databaseList.push({
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.databaseList = []
+            response.data.result.forEach(e => {
+              _this.databaseList.push({
                 value: e,
                 label: e
               })
             })
-            // if (response.body.result.length > 0) {
-            //   this.currentDatabaseName = response.body.result[0]
-            // }
+            if (response.data.result.length > 0) {
+              _this.currentDatabaseName = _this.databaseList[0].value
+            }
           } else {
-            this.$alert('获取数据库列表失败，请稍后再试！')
+            _this.$alert('获取数据库列表失败：没有权限')
           }
         }, function (response) {
-          this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
+          _this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
         })
     },
     getDisplayTableSchema (operationId) {
+      let _this = this
       this.$http.get('/relational/view-table-schema/', {
-        username: '',
-        databaseName: '',
-        tableName: '',
-        instanceId: 0,
-        encrypted: false
-      }).then(
-        function (response) {
-          this.currentTableName = response.body.result.tableName
-          this.dataTableSchema = response.body.result.schema
-          if (operationId) {
-            this.currentFocusOperation = operationId
-            this.loading = false
-          }
+        params: {
+          username: this.GLOBAL.username,
+          databaseName: this.currentDatabaseName,
+          tableName: this.operationTable[operationId].tableName,
+          instanceId: 0,
+          encrypted: ''
         }
-      )
-    },
-    getDisplayTable (operationId) {
-      this.$http.get('/relational/select/', {
-        username: '',
-        databaseName: '',
-        tableName: '',
-        instanceId: 0,
-        encrypted: false
       }).then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            this.dataTable = response.body.result
-            if (operationId) {
-              this.currentFocusOperation = operationId
-              this.loading = false
+          if (response.status === 200 && response.data.success) {
+            _this.currentTableName = response.data.result.tableName
+            _this.dataTableSchema = response.data.result.schema
+            if (operationId === 1) {
+              _this.currentFocusOperation = operationId
+              _this.loading = false
             }
           } else {
-            this.$alert('获取数据表失败，请稍后再试！')
+            _this.$alert('获取表信息失败：没有权限')
+            _this.loading = false
+          }
+        }, response => {
+          _this.$alert('获取表信息失败：网络错误')
+          _this.loading = false
+        })
+    },
+    getDisplayTable (operationId) {
+      let _this = this
+      this.$http.get('http://localhost:5000/relational/select/', {
+        params: {
+          username: this.GLOBAL.username,
+          databaseName: this.currentDatabaseName,
+          tableName: this.operationTable[operationId].tableName,
+          instanceId: 0,
+          encrypted: ''
+        }
+      }).then(
+        function (response) {
+          console.log(response)
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.dataTable = response.data.result
+            if (operationId) {
+              _this.currentFocusOperation = operationId
+              _this.loading = false
+            }
+          } else {
+            _this.$alert('查看数据失败：没有权限')
+            _this.loading = false
           }
         }, function (response) {
-          this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
+          _this.$alert('查看数据失败，请检查网络连接，稍后再试！')
+          _this.loading = false
         })
     },
     onClickNewDatabaseSubmit () {
+      let _this = this
       let newDatabaseName = this.newDatabaseName
       console.log(this.newDatabaseName)
       this.newDatabaseDialogShow = false
-      let authed = true
-      this.GLOBAL.privilegeList.forEach((e) => {
-        if (e.title === '创建数据库权限') {
-          if (!e.userAuth[this.GLOBAL.username]) {
-            authed = false
-          }
-        }
-      })
-      if (authed) {
-        this.$http.post('/relational/create-database/', {
-          params: {
-            databaseName: newDatabaseName,
-            username: ''
-          }
-        }).then(response => {
-          this.GLOBAL.databaseList.push(newDatabaseName)
-          this.databaseList.push({
+      this.$http.post('/relational/create-database/', {
+        databaseName: newDatabaseName,
+        username: this.GLOBAL.username,
+        instanceId: 0
+      }).then(response => {
+        console.log(response)
+        if (response.status === 200 && response.data.success) {
+          _this.GLOBAL.databaseList.push(newDatabaseName)
+          _this.databaseList.push({
             value: newDatabaseName,
             label: newDatabaseName
           })
-          this.$alert('创建数据库成功！')
-        })
-      } else {
-        this.$alert('创建数据库失败：没有权限')
-      }
+          _this.$alert('创建数据库成功！')
+        } else {
+          _this.$alert(`创建数据库失败：${response.data.result}`)
+        }
+      }, response => {
+        _this.$alert('创建数据库失败：网络错误')
+      })
     },
     onClickEmbeddingSubmit () {
       this.embeddingDialogShow = false
       this.loading = true
+      this.getDisplayTableSchema(6)
       this.$http.get('/relational/select-embedding/', {
         params: {
+          username: this.GLOBAL.username,
+          databaseName: this.currentDatabaseName,
+          tableName: this.operationTable[6].tableName,
+          instanceId: 0,
+          encrypted: '',
           embedding: this.embeddingString
         }
       }).then((response) => {
-        if (response.status === 200 && response.body.success) {
-          console.log(response.body)
-          this.dataTable = response.body.result
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          this.dataTable = response.data.result
           this.currentFocusOperation = 6
           this.loading = false
           console.log(this.currentFocusOperation, this.dataTable, this.currentTableName)
@@ -336,24 +358,175 @@ export default {
       })
       console.log(tableNames)
     },
+    createTable () {
+      let _this = this
+      console.log(this.GLOBAL.username, this.currentDatabaseName, this.operationTable[0])
+      this.$http.post('/relational/create-table/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: this.operationTable[0].tableName,
+        instanceId: 0
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            // title: '保存成功',
+            message: `创建表 ${_this.operationTable[0].tableName} 成功`,
+            offset: 200
+          })
+          // _this.operationTable[0].tableName = ''
+        } else {
+          _this.$notify({
+            // title: '保存成功',
+            message: `创建表 ${_this.operationTable[0].tableName} 失败：${response.data.result}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        this.loading = false
+        _this.$notify({
+          // title: '保存成功',
+          message: `创建表 ${_this.operationTable[0].tableName} 失败：网络错误`,
+          offset: 200
+        })
+      })
+    },
+    insert () {
+      let _this = this
+      let tableName = this.operationTable[2].tableName
+      this.$http.post('/relational/insert/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: tableName,
+        instanceId: 0
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            // title: '保存成功',
+            message: `向表 ${tableName} 插入数据成功`,
+            offset: 200
+          })
+          // _this.operationTable[0].tableName = ''
+        } else {
+          _this.$notify({
+            // title: '保存成功',
+            message: `向表 ${tableName} 插入数据失败：${response.data.result}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        _this.loading = false
+        _this.$notify({
+          message: `向表 ${tableName} 插入数据失败：网络错误`
+        })
+      })
+    },
+    update () {
+      let _this = this
+      let tableName = this.operationTable[3].tableName
+      this.$http.post('/relational/update/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: tableName,
+        instanceId: 0
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            // title: '保存成功',
+            message: `更新表 ${tableName} 数据成功`,
+            offset: 200
+          })
+          // _this.operationTable[0].tableName = ''
+        } else {
+          _this.$notify({
+            // title: '保存成功',
+            message: `更新表 ${tableName} 数据失败：${response.data.result}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        _this.loading = false
+        _this.$notify({
+          message: `更新表 ${tableName} 数据失败：网络错误`
+        })
+      })
+    },
+    delete () {
+      let _this = this
+      let tableName = this.operationTable[4].tableName
+      this.$http.post('/relational/delete/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: tableName,
+        instanceId: 0
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            // title: '保存成功',
+            message: `删除表 ${tableName} 数据成功`,
+            offset: 200
+          })
+          // _this.operationTable[0].tableName = ''
+        } else {
+          _this.$notify({
+            // title: '保存成功',
+            message: `删除表 ${tableName} 数据失败：${response.data.result}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        _this.loading = false
+        _this.$notify({
+          message: `删除表 ${tableName} 数据失败：网络错误`
+        })
+      })
+    },
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
+        case 0:
+          // create table
+          this.loading = true
+          this.createTable()
+          break
         case 1:
           // schema
           this.loading = true
           this.getDisplayTableSchema(1)
           break
+        case 2:
+          // insert
+          this.loading = true
+          this.insert()
+          break
+        case 3:
+          // update
+          this.loading = true
+          this.update()
+          break
+        case 4:
+          // delete
+          this.loading = true
+          this.delete()
+          break
         case 5:
           // select
           this.loading = true
-          this.getDisplayTableSchema()
+          this.getDisplayTableSchema(5)
           this.getDisplayTable(5)
           break
         case 6:
           // select embedding
           this.embeddingDialogShow = true
-          this.getDisplayTableSchema()
+          // this.getDisplayTableSchema(6)
+          // this.getDisplayTable(6)
           break
       }
     }
@@ -365,6 +538,9 @@ export default {
 </script>
 
 <style scoped>
+  .margin-top {
+    margin-top: 20px;
+  }
   .from-left {
     text-align: left;
   }

@@ -3,17 +3,19 @@
   <el-row type="flex">
     <el-col :span="10">
       <div class="left-indent">
+        <h1>可迁移性测试</h1>
         <el-table :data="operationTable"
                   ref="operations"
                   stripe
                   row-key="id"
                   default-expand-all
+                  class="margin-top"
         >
           <el-table-column
             prop="title"
             label="操作名称"
             align="left"
-            width="220"
+            width="160"
           ></el-table-column>
           <el-table-column
             prop="tableName"
@@ -31,6 +33,7 @@
           <el-table-column
             label="操作"
             align="center"
+            width="80"
           >
             <template slot-scope="scope">
               <el-button type="primary" size="mini" plain @click="onExecute(scope.row.id)">执行</el-button>
@@ -40,6 +43,7 @@
       </div>
     </el-col>
     <el-col :span="12" :offset="1" v-loading="loading">
+      <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
           <h1>表： {{currentTableName}}</h1>
@@ -91,26 +95,16 @@ export default {
         needParam: false
       }, {
         id: 3,
-        title: 'dump命令导出表结构',
-        tableName: '',
-        needParam: false
-      }, {
-        id: 4,
         title: 'dump命令导出表数据',
         tableName: '',
         needParam: false
       }, {
-        id: 5,
-        title: 'dump命令导出表结构和数据',
-        tableName: '',
-        needParam: false
-      }, {
-        id: 6,
+        id: 4,
         title: '查看表数据',
         tableName: '',
         needParam: false
       }, {
-        id: 7,
+        id: 5,
         title: '查看文件',
         tableName: '',
         needParam: false
@@ -186,8 +180,10 @@ export default {
 </script>
 
 <style scoped>
-
-.left-indent {
-  margin-left: 40px;
-}
+  .margin-top {
+    margin-top: 20px;
+  }
+  .left-indent {
+    margin-left: 40px;
+  }
 </style>

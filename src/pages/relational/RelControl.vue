@@ -4,6 +4,7 @@
       <div class="left-indent">
         <h1>安全控制测试</h1>
         <div class="from-left margin-top">
+          <p class="header-title">防篡改加密</p>
           <el-select v-model="encodeID" placeholder="选择加密方式">
             <el-option
               v-for="item in encodeList"
@@ -193,5 +194,11 @@ export default {
   }
   .margin-top {
     margin-top: 20px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

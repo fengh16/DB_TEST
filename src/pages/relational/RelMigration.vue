@@ -4,6 +4,18 @@
     <el-col :span="10">
       <div class="left-indent">
         <h1>可迁移性测试</h1>
+        <div class="from-left">
+          <p class="header-title">当前数据库</p>
+          <el-select v-model="currentDatabaseName" placeholder="选择数据库" default-first-option>
+            <el-option
+              v-for="item in databaseList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+<!--          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>-->
+        </div>
         <el-table :data="operationTable"
                   ref="operations"
                   stripe
@@ -49,7 +61,7 @@
           <h1>表： {{currentTableName}}</h1>
         </div>
         <el-table
-          v-if="currentFocusOperation === 6"
+          v-if="shouldDisplayDataTable"
           :data="dataTable"
           ref="displayData"
           stripe
@@ -58,14 +70,13 @@
         >
           <el-table-column
             v-for="(columnDef, index) in dataTableSchema"
-            :prop="columnDef.propName"
+            :prop="columnDef.columnName"
             :label="columnDef.columnName"
             :key="index"
             align="left"
           >
           </el-table-column>
         </el-table>
-
       </div>
     </el-col>
   </el-row>
@@ -80,22 +91,22 @@ export default {
       currentDatabaseName: '',
       operationTable: [{
         id: 0,
-        title: '查询语句导入',
+        title: '查询语句导入数据',
         tableName: '',
         needParam: false
       }, {
         id: 1,
-        title: 'import命令导入',
+        title: 'import命令导入数据',
         tableName: '',
         needParam: false
       }, {
         id: 2,
-        title: '查询语句导出',
+        title: '查询语句导出数据',
         tableName: '',
         needParam: false
       }, {
         id: 3,
-        title: 'dump命令导出表数据',
+        title: 'dump命令导出数据',
         tableName: '',
         needParam: false
       }, {
@@ -119,63 +130,112 @@ export default {
   computed: {
     shouldDisplayTableTitle () {
       return this.currentFocusOperation === 6// 只有查看表数据一项显示表头
+    },
+    shouldDisplayDataTable () {
+      return this.currentFocusOperation === 4
     }
   },
   methods: {
-    getDisplayTableSchema (operationId) {
-      this.$http.get('/relational/view-table-schema/', {
-        username: '',
-        databaseName: '',
-        tableName: '',
-        instanceId: 0,
-        encrypted: false
-      }).then(
-        function (response) {
-          this.currentTableName = response.body.result.tableName
-          this.dataTableSchema = response.body.result.schema
-          if (operationId) {
-            this.currentFocusOperation = operationId
-            this.loading = false
-          }
+    getDatabaseList () {
+      let _this = this
+      this.$http.get('/relational/list-database/', {
+        params: {
+          username: this.GLOBAL.username,
+          instanceId: 0
         }
-      )
-    },
-    getDisplayTable (operationId) {
-      this.$http.get('/relational/select/', {
-        username: '',
-        databaseName: '',
-        tableName: '',
-        instanceId: 0,
-        encrypted: false
       }).then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            this.dataTable = response.body.result
-            if (operationId) {
-              this.currentFocusOperation = operationId
-              this.loading = false
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.databaseList = []
+            response.data.result.forEach(e => {
+              _this.databaseList.push({
+                value: e,
+                label: e
+              })
+            })
+            if (response.data.result.length > 0) {
+              _this.currentDatabaseName = _this.databaseList[0].value
             }
           } else {
-            this.$alert('获取数据表失败，请稍后再试！')
+            _this.$alert('获取数据库列表失败：没有权限')
           }
         }, function (response) {
-          this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
+          _this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
+        })
+    },
+    getDisplayTableSchema (operationId) {
+      let _this = this
+      this.$http.get('/relational/view-table-schema/', {
+        params: {
+          username: this.GLOBAL.username,
+          databaseName: this.currentDatabaseName,
+          tableName: this.operationTable[operationId].tableName,
+          instanceId: 0,
+          encrypted: ''
+        }
+      }).then(
+        function (response) {
+          if (response.status === 200 && response.data.success) {
+            _this.currentTableName = response.data.result.tableName
+            _this.dataTableSchema = response.data.result.schema
+            if (operationId === -1) {
+              _this.currentFocusOperation = operationId
+              _this.loading = false
+            }
+          } else {
+            _this.$alert('获取表信息失败：没有权限')
+            _this.loading = false
+          }
+        }, response => {
+          _this.$alert('获取表信息失败：网络错误')
+          _this.loading = false
+        })
+    },
+    getDisplayTable (operationId) {
+      let _this = this
+      this.$http.get('http://localhost:5000/relational/select/', {
+        params: {
+          username: this.GLOBAL.username,
+          databaseName: this.currentDatabaseName,
+          tableName: this.operationTable[operationId].tableName,
+          instanceId: 0,
+          encrypted: ''
+        }
+      }).then(
+        function (response) {
+          console.log(response)
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.dataTable = response.data.result
+            if (operationId) {
+              _this.currentFocusOperation = operationId
+              _this.loading = false
+            }
+          } else {
+            _this.$alert('查看数据失败：没有权限')
+            _this.loading = false
+          }
+        }, function (response) {
+          _this.$alert('查看数据失败，请检查网络连接，稍后再试！')
+          _this.loading = false
         })
     },
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
-        case 6:
+        case 4:
           // select
           this.loading = true
-          this.getDisplayTableSchema()
-          this.getDisplayTable(6)
+          this.getDisplayTableSchema(4)
+          this.getDisplayTable(4)
           break
       }
     }
+  },
+  created () {
+    this.getDatabaseList()
   }
-
 }
 </script>
 
@@ -185,5 +245,14 @@ export default {
   }
   .left-indent {
     margin-left: 40px;
+  }
+  .from-left {
+    text-align: left;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

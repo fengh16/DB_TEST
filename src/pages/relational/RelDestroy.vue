@@ -4,6 +4,7 @@
       <div class="left-indent">
         <h1>可销毁性测试</h1>
         <div class="from-left">
+          <p class="header-title">当前数据库</p>
           <el-select v-model="currentDatabaseName" placeholder="选择数据库">
             <el-option
               v-for="item in databaseList"
@@ -382,5 +383,11 @@ export default {
   }
   .left-indent {
     margin-left: 40px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

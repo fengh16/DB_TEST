@@ -4,6 +4,7 @@
       <div class="left-indent margin-top">
         <h1>数据隔离测试</h1>
         <div class="from-left">
+          <p class="header-title">数据服务实例</p>
           <el-select v-model="instanceID" placeholder="选择实例">
             <el-option
               v-for="item in instanceList"
@@ -301,5 +302,11 @@ export default {
   }
   .title-reserved {
     height: 60px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

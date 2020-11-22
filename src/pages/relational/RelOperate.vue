@@ -4,6 +4,7 @@
       <div class="left-indent">
         <h1>可操作性测试</h1>
         <div class="from-left">
+          <p class="header-title">当前数据库</p>
           <el-select v-model="currentDatabaseName" placeholder="选择数据库" default-first-option>
             <el-option
               v-for="item in databaseList"
@@ -13,7 +14,6 @@
             </el-option>
           </el-select>
           <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
-<!--          <el-button type="primary" plain @click="onDebug">DEBUG</el-button>-->
         </div>
         <el-table :data="operationTable"
                   ref="operations"
@@ -258,8 +258,10 @@ export default {
               _this.loading = false
             }
           } else {
-            _this.$alert('获取表信息失败：没有权限')
-            _this.loading = false
+            if (operationId === 1) {
+              _this.$alert(`获取表信息失败：${response.data.msg}`)
+              _this.loading = false
+            }
           }
         }, response => {
           _this.$alert('获取表信息失败：网络错误')
@@ -287,7 +289,7 @@ export default {
               _this.loading = false
             }
           } else {
-            _this.$alert('查看数据失败：没有权限')
+            _this.$alert(`查看数据失败：${response.data.msg}`)
             _this.loading = false
           }
         }, function (response) {
@@ -499,6 +501,7 @@ export default {
         case 1:
           // schema
           this.loading = true
+          this.dataTableSchema = []
           this.getDisplayTableSchema(1)
           break
         case 2:
@@ -519,6 +522,8 @@ export default {
         case 5:
           // select
           this.loading = true
+          this.dataTableSchema = []
+          this.dataTable = []
           this.getDisplayTableSchema(5)
           this.getDisplayTable(5)
           break
@@ -549,5 +554,11 @@ export default {
   }
   .title-reserved {
     height: 60px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

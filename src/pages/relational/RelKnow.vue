@@ -55,12 +55,12 @@ export default {
       this.relation_info = []
       this.$http.get('/relational/description').then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            for (let t in response.body.result) {
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            for (let t in response.data.result) {
               this.relation_info.push({
                 'item': t,
-                'info': response.body.result[t]
+                'info': response.data.result[t]
               })
             }
           } else {

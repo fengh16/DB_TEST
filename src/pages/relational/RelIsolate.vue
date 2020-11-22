@@ -1,26 +1,29 @@
 <template>
   <el-row type="flex">
     <el-col :span="10">
-      <h1>数据隔离测试</h1>
-      <div class="left-indent from-left margin-top">
-        <el-select v-model="instanceID" placeholder="选择实例">
-          <el-option
-            v-for="item in instanceList"
+      <div class="left-indent margin-top">
+        <h1>数据隔离测试</h1>
+        <div class="from-left">
+          <p class="header-title">数据服务实例</p>
+          <el-select v-model="instanceID" placeholder="选择实例">
+            <el-option
+              v-for="item in instanceList"
               :key="item.value"
               :label="item.label"
               :value="item.value">
-          </el-option>
-        </el-select>
-      </div>
-        <div class="from-left left-indent margin-top">
+            </el-option>
+          </el-select>
+        </div>
           <el-table :data="operationTable"
                     class="margin-top"
                     stripe
-                    default-expand-all>
+                    default-expand-all
+          >
             <el-table-column
               property="operationName"
               label="操作名称"
               align="left"
+              width="100"
             ></el-table-column>
             <el-table-column
               property="table"
@@ -33,15 +36,16 @@
             <el-table-column
               property="operate"
               label="操作"
-              align="center">
+              align="center"
+              width="80">
               <template slot-scope="scope">
                 <el-button @click="operate(scope.$index)" type="primary" size="mini" plain>执行</el-button>
               </template>
             </el-table-column>
           </el-table>
-        </div>
+      </div>
     </el-col>
-    <el-col :span="12">
+    <el-col :span="12" :offset="1">
       <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
@@ -298,5 +302,11 @@ export default {
   }
   .title-reserved {
     height: 60px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

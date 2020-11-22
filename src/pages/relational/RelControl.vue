@@ -1,35 +1,36 @@
 <template>
   <el-row type="flex">
     <el-col :span="10">
-      <h1>安全控制测试</h1>
-      <div class="left-indent from-left margin-top">
-        <el-select v-model="encodeID" placeholder="选择加密方式">
-          <el-option
-            v-for="item in encodeList"
+      <div class="left-indent">
+        <h1>安全控制测试</h1>
+        <div class="from-left margin-top">
+          <p class="header-title">防篡改加密</p>
+          <el-select v-model="encodeID" placeholder="选择加密方式">
+            <el-option
+              v-for="item in encodeList"
               :key="item.value"
               :label="item.label"
               :value="item.value">
-          </el-option>
-        </el-select>
-        <el-button type="primary" plain @click="onClickDecode">解密</el-button>
-      </div>
-        <div class="from-left left-indent margin-top">
-          <el-table :data="operationTable" class="margin-top" stripe default-expand-all>
-            <el-table-column property="operationName" label="操作名称" align="left"></el-table-column>
-            <el-table-column property="table" label="表名" align="center">
-              <template slot-scope="scope">
-                <el-input v-model="tableName[scope.$index]" type="text"  placeholder="输入表名"></el-input>
-              </template>
-            </el-table-column>
-            <el-table-column property="operate" label="操作" align="center">
-              <template slot-scope="scope">
-                <el-button @click="operate(scope.$index)" type="primary" size="mini" plain>执行</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+            </el-option>
+          </el-select>
+          <el-button type="primary" plain @click="onClickDecode">解密</el-button>
         </div>
+        <el-table :data="operationTable" class="margin-top" stripe default-expand-all>
+          <el-table-column property="operationName" label="操作名称" align="left" width="100"></el-table-column>
+          <el-table-column property="table" label="表名" align="center">
+            <template slot-scope="scope">
+              <el-input v-model="tableName[scope.$index]" type="text"  placeholder="输入表名"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column property="operate" label="操作" align="center" width="80">
+            <template slot-scope="scope">
+              <el-button @click="operate(scope.$index)" type="primary" size="mini" plain>执行</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-col>
-    <el-col :span="8">
+    <el-col :span="12" :offset="1">
       <h1>查看测试结果</h1>
         <div class="from-left left-indent margin-top">
           <el-table :data="dataTable" class="margin-top" v-if="currentOperationID === 1">
@@ -193,5 +194,11 @@ export default {
   }
   .margin-top {
     margin-top: 20px;
+  }
+  .header-title {
+    display: inline-block;
+    border-left: 4px solid #409eff;
+    margin-right: 20px;
+    padding-left: 8px;
   }
 </style>

@@ -1,4 +1,13 @@
 export default {
+  fparse: function (url) {
+    let paramStr = url.slice(url.indexOf('?') + 1).split('&')
+    let param = {}
+    paramStr.forEach((p) => {
+      let splits = p.split('=')
+      param[splits[0]] = splits[1]
+    })
+    return param
+  },
   'post|/login': function (option) {
     let body = JSON.parse(option.body)
     if ('username' in body && 'password' in body && body['username'] && body['username'] === body['password']) {
@@ -55,6 +64,7 @@ export default {
     }
   },
   'get|/relational/select/': option => {
+    console.log(option)
     return {
       status: 200,
       success: true,

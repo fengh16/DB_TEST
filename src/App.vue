@@ -201,24 +201,24 @@ export default {
         password: this.password
       }).then(
         function (response) {
-          if (response.status === 200 && response.body.result === '登录成功') {
-            console.log(response.body)
-            if (response.body.usertype === '管理员') {
-              this.userAdmin = true
+          if (response.status === 200 && response.data.result === '登录成功') {
+            console.log(response.data)
+            if (response.data.usertype === '管理员') {
+              _this.userAdmin = true
             } else {
-              this.userAdmin = false
+              _this.userAdmin = false
             }
-            this.userName = nowUsername
-            this.GLOBAL.username = nowUsername
+            _this.userName = nowUsername
+            _this.GLOBAL.username = nowUsername
             document.cookie = 'username=' + nowUsername
-            this.loggedIn = true
-            this.showLogin = false
+            _this.loggedIn = true
+            _this.showLogin = false
           } else {
-            this.$alert('登录失败，请检查用户名与密码并稍后再试！')
+            _this.$alert('登录失败，请检查用户名与密码并稍后再试！')
           }
           _this.appLogging = false
         }, function (response) {
-          this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
+          _this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
           _this.appLogging = false
         })
     },
@@ -231,23 +231,24 @@ export default {
       document.cookie = 'authed='
     },
     auth: function () {
+      let _this = this
       this.inputUserName = this.userName
       this.$http.post('/relational/authenticate/', {
         username: this.userName, // 不给他输入别的用户名的机会，就算是前端改了框里的内容也不让他提交（
         password: this.password
       }).then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            this.authTableShow = false
-            this.authed = true
-            this.$alert(response.body.result)
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.authTableShow = false
+            _this.authed = true
+            _this.$alert(response.data.result)
             document.cookie = 'authed=true'
           } else {
-            this.$alert('认证失败，请检查密码并稍后再试！')
+            _this.$alert('认证失败，请检查密码并稍后再试！')
           }
         }, function (response) {
-          this.$alert('认证失败，请检查密码，检查网络连接，并稍后再试！')
+          _this.$alert('认证失败，请检查密码，检查网络连接，并稍后再试！')
         })
     },
     showLogs: function () {
@@ -255,11 +256,11 @@ export default {
       this.logTableShow = true
       this.$http.get('/relational/log').then(
         function (response) {
-          if (response.status === 200 && response.body.success) {
-            console.log(response.body)
-            for (let t in response.body.result) {
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            for (let t in response.data.result) {
               this.logs.push({
-                'data': response.body.result[t],
+                'data': response.data.result[t],
                 'index': t
               })
             }
@@ -270,47 +271,49 @@ export default {
           this.$alert('获取日志失败，请检查网络连接，稍后再试！')
         })
     },
+    changeUser (userIndex) {
+      let newUsername = this.userList[userIndex]
+      let password = newUsername
+      this.authed = false
+      this.loggedIn = false
+      document.cookie = 'username='
+      document.cookie = 'authed='
+      this.userName = ''
+      this.GLOBAL.username = ''
+      this.showLogin = false
+      this.appLogging = true
+      let _this = this
+      this.$http.post('/login/', {
+        username: newUsername,
+        password: password
+      }).then((response) => {
+        if (response.status === 200 && response.data.result === '登录成功') {
+          if (response.data.usertype === '管理员') {
+            _this.userAdmin = true
+          } else {
+            _this.userAdmin = false
+          }
+          _this.userName = newUsername
+          _this.password = password
+          _this.GLOBAL.username = newUsername
+          document.cookie = 'username=' + newUsername
+          _this.loggedIn = true
+          _this.showLogin = false
+          console.log(this.userName, this.password)
+        } else {
+          _this.$alert('登录失败，请检查用户名与密码并稍后再试！')
+        }
+        _this.appLogging = false
+      }, (response) => {
+        _this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
+        _this.appLogging = false
+      })
+    },
     userCommand (item) {
       if (item === 'logout') {
         this.doLogout()
       } else {
-        let newUsername = this.userList[parseInt(item)]
-        let password = newUsername
-        console.log(item, newUsername)
-        this.authed = false
-        this.loggedIn = false
-        document.cookie = 'username='
-        document.cookie = 'authed='
-        this.userName = ''
-        this.GLOBAL.username = ''
-        this.showLogin = false
-        this.appLogging = true
-        let _this = this
-        this.$http.post('/login/', {
-          username: newUsername,
-          password: password
-        }).then((response) => {
-          if (response.status === 200 && response.body.result === '登录成功') {
-            if (response.body.usertype === '管理员') {
-              this.userAdmin = true
-            } else {
-              this.userAdmin = false
-            }
-            this.userName = newUsername
-            this.password = password
-            this.GLOBAL.username = newUsername
-            document.cookie = 'username=' + newUsername
-            this.loggedIn = true
-            this.showLogin = false
-            console.log(this.userName, this.password)
-          } else {
-            this.$alert('登录失败，请检查用户名与密码并稍后再试！')
-          }
-          _this.appLogging = false
-        }, (response) => {
-          this.$alert('登录失败，请检查用户名与密码，检查网络连接，并稍后再试！')
-          _this.appLogging = false
-        })
+        this.changeUser(parseInt(item))
       }
     }
   },

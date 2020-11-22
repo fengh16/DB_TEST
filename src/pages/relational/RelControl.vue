@@ -134,10 +134,10 @@ export default {
             encrypted: this.encodeMode
           }).then(
             function (response) {
-              if (response.status === 200 && response.body.success) {
-                console.log(response.body)
-                this.dataTableSchema = response.body.result.schema
-                this.displayTableTitle = response.body.result.tableName
+              if (response.status === 200 && response.data.success) {
+                console.log(response.data)
+                this.dataTableSchema = response.data.result.schema
+                this.displayTableTitle = response.data.result.tableName
               } else {
                 this.$alert('查看表信息失败，请稍后再试！')
               }
@@ -157,9 +157,9 @@ export default {
             encrypted: this.encodeMode
           }).then(
             function (response) {
-              if (response.status === 200 && response.body.success) {
-                console.log(response.body)
-                this.dataTable = response.body.result
+              if (response.status === 200 && response.data.success) {
+                console.log(response.data)
+                this.dataTable = response.data.result
                 this.displayTableTitle = this.tableName[operationID]
                 console.log(this.dataTable)
               } else {

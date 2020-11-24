@@ -253,10 +253,12 @@ export default {
           // 查看数据
           console.log(this.tableName[operationID])
           this.$http.get('/relational/select/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID
+            params: {
+              databaseName: '',
+              tableName: this.tableName[operationID],
+              username: '',
+              instanceID: this.instanceID
+            }
           }).then(
             function (response) {
               if (response.status === 200 && response.data.success) {

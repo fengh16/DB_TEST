@@ -252,23 +252,24 @@ export default {
         })
     },
     showLogs: function () {
+      let _this = this
       this.logs = []
       this.logTableShow = true
-      this.$http.get('/relational/log').then(
+      this.$http.get('/relational/log/').then(
         function (response) {
           if (response.status === 200 && response.data.success) {
             console.log(response.data)
             for (let t in response.data.result) {
-              this.logs.push({
+              _this.logs.push({
                 'data': response.data.result[t],
                 'index': t
               })
             }
           } else {
-            this.$alert('获取日志失败，请稍后再试！')
+            _this.$alert('获取日志失败，请稍后再试！')
           }
         }, function (response) {
-          this.$alert('获取日志失败，请检查网络连接，稍后再试！')
+          _this.$alert('获取日志失败，请检查网络连接，稍后再试！')
         })
     },
     changeUser (userIndex) {

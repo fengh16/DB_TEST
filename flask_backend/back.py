@@ -149,6 +149,10 @@ db = {
     },
 }
 
+existing_files = {
+    'backup_1.sql'
+}
+
 
 def is_admin(username):
     return username.startswith('admin')
@@ -237,7 +241,7 @@ def get_user_privilege_list(dbtype):
             'itemId': i,
             'title': privilege_name,
             'granted': granted
-        } 
+        }
         for i, (privilege_name, granted) in enumerate(global_user_privilege.items())]
     }
     response = {
@@ -383,7 +387,7 @@ def view_table_schema(dbtype):
                 'msg': '没有权限'
             }
     return make_response(response, 200)
-        
+
 
 # 11. 插入数据
 @app.route('/<string:dbtype>/insert/', methods=['POST'])
@@ -646,6 +650,7 @@ def export_data(dbtype):
     import_method = request.json['method']
     authed = have_table_privilege(username, instance_id, db_name, 'R')
     if authed:
+        existing_files.add(filename)
         response = {
             'success': True,
             'result': '导出成功'
@@ -689,6 +694,27 @@ def select_log(dbtype):
         ]
     }
     return make_response(response, 200)
+
+
+@app.route('/<string:dbtype>/delte-file/', method['POST'])
+@cross_origin()
+def delete_file(dbtype):
+    username = request.json['username']
+    filename = request.json['filename']
+
+    if filename in existing_files:
+        existing_files.remove(filename)
+        response = {
+            'success': True,
+            'result': '',
+            'msg': '删除成功'
+        }
+    else:
+        response = {
+            'success': False,
+            'result': '',
+            'msg': '文件不存在'
+        }
 
 
 if __name__ == '__main__':

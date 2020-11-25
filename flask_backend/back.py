@@ -696,7 +696,7 @@ def select_log(dbtype):
     return make_response(response, 200)
 
 
-@app.route('/<string:dbtype>/delte-file/', method['POST'])
+@app.route('/<string:dbtype>/delte-file/', methods=['POST'])
 @cross_origin()
 def delete_file(dbtype):
     username = request.json['username']
@@ -715,7 +715,7 @@ def delete_file(dbtype):
             'result': '',
             'msg': '文件不存在'
         }
-
+    return make_response(response, 200)
 
 if __name__ == '__main__':
     app.run(host='localhost',port=5000,debug=True)

@@ -609,7 +609,7 @@ response = {
 24. 列出当前所有数据库
 
 ```python
-'GET /relational/list-database'
+'GET /relational/list-database/'
 
 param = {
     "username": str,
@@ -621,6 +621,25 @@ response = {
         "success": bool,
         "result": [str],
         "log": [str]
+    }
+}
+```
+
+25. 删除文件
+
+```python
+'POST' /relational/delete-file/
+
+body = {
+    "username": str,
+    "filename": str
+}
+
+response = {
+    200: {
+        "success": bool,
+        "result": "",
+        "msg": "删除成功 | 文件不存在"
     }
 }
 ```

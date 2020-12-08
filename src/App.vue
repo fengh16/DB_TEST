@@ -12,7 +12,7 @@
                 </span>
               <el-dropdown-menu slot="dropdown">
                 <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
-                <el-dropdown-item v-for="(username, i) in userList" :key="i" :command="i">{{username}}</el-dropdown-item>
+                <el-dropdown-item v-for="(username, i) in this.$store.state.userList" :key="i" :command="i">{{username}}</el-dropdown-item>
                 <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
@@ -49,6 +49,7 @@
             <el-col :span="12">
               <el-button type="primary" plain @click="doAuth" v-if="!authed">身份认证</el-button>
               <el-button type="primary" plain @click="cancelAuth" v-else>取消认证</el-button>
+              <el-button type="primary" plain @click="doSetPassword">设置密码</el-button>
               <el-button type="primary" plain @click="showLogs">查看日志</el-button>
             </el-col>
           </el-row>
@@ -87,7 +88,22 @@
         <el-button type="primary" @click="this.auth">认 证</el-button>
       </div>
     </el-dialog>
-    <el-dialog title="登录" v-if="!loggedIn" :visible.sync="showLogin" :close-on-click-modal=false :close-on-press-escape=false :show-close=false>
+    <el-dialog title="设置密码" :visible.sync="setPasswordTableShow">
+      <el-form>
+        <el-form-item label="用户名" :label-width="formLabelWidth">
+          <el-input v-model="setPasswordUsername" autocomplete="off" placeholder="用户名" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="密码" :label-width="formLabelWidth">
+          <el-input v-model="newPassword" autocomplete="off" placeholder="请输入密码" show-password></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="setPasswordTableShow=false">取 消</el-button>
+        <el-button type="primary" @click="this.setPassword">提 交</el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="工业互联网工业互联网可信服务数据管理测试平台" v-if="!loggedIn" :visible.sync="showLogin" :close-on-click-modal=false :close-on-press-escape=false :show-close=false>
+      <h3>登 录</h3>
       <el-form>
         <el-form-item label="用户名" :label-width="formLabelWidth">
           <el-input v-model="inputUserName" autocomplete="off" placeholder="请输入用户名"></el-input>
@@ -115,14 +131,17 @@ export default {
       logs: [],
       logTableShow: false,
       authTableShow: false,
+      setPasswordTableShow: false,
       password: '',
       inputUserName: '',
+      setPasswordUsername: '',
       formLabelWidth: '80px',
       authed: false,
       loggedIn: false,
       showLogin: true,
       appLogging: false,
-      userList: ['administrator', 'developer1', 'developer2', 'developer3', 'developer4'],
+      newPassword: '',
+      userList: ['root', 'developer1', 'developer2', 'developer3', 'developer4'],
       asideMenuItemProps: [{
         index: 'relation',
         title: '关系数据管理服务'
@@ -205,14 +224,19 @@ export default {
             console.log(response.data)
             if (response.data.usertype === '管理员') {
               _this.userAdmin = true
+              _this.GLOBAL.isAdmin = true
             } else {
               _this.userAdmin = false
+              _this.GLOBAL.isAdmin = false
             }
             _this.userName = nowUsername
             _this.GLOBAL.username = nowUsername
+            _this.$store.commit('updateUsername', nowUsername)
             document.cookie = 'username=' + nowUsername
             _this.loggedIn = true
             _this.showLogin = false
+
+            _this.getUserList()
           } else {
             _this.$alert('登录失败，请检查用户名与密码并稍后再试！')
           }
@@ -222,6 +246,10 @@ export default {
           _this.appLogging = false
         })
     },
+    doSetPassword: function () {
+      this.setPasswordUsername = this.$store.state.username
+      this.setPasswordTableShow = true
+    },
     doAuth: function () {
       this.inputUserName = this.userName
       this.authTableShow = true
@@ -229,6 +257,23 @@ export default {
     cancelAuth: function () {
       this.authed = false
       document.cookie = 'authed='
+    },
+    setPassword: function () {
+      let _this = this
+      this.$http.post('/set-password/', {
+        username: this.setPasswordUsername,
+        password: this.newPassword
+      }).then(response => {
+        if (response.status === 200 && response.data.success) {
+          _this.setPasswordTableShow = false
+          _this.$alert('设置成功')
+        } else {
+          _this.setPasswordTableShow = false
+          _this.$alert(`设置失败：${response.data.msg}`)
+        }
+      }, response => {
+        _this.$alert('设置失败，请检查网络连接，并稍后再试！')
+      })
     },
     auth: function () {
       let _this = this
@@ -242,9 +287,11 @@ export default {
             console.log(response.data)
             _this.authTableShow = false
             _this.authed = true
+            _this.$store.commit('updateAuth', true)
             _this.$alert(response.data.result)
             document.cookie = 'authed=true'
           } else {
+            _this.$store.commit('updateAuth', false)
             _this.$alert('认证失败，请检查密码并稍后再试！')
           }
         }, function (response) {
@@ -297,6 +344,7 @@ export default {
           _this.userName = newUsername
           _this.password = password
           _this.GLOBAL.username = newUsername
+          _this.$store.commit('updateUsername', newUsername)
           document.cookie = 'username=' + newUsername
           _this.loggedIn = true
           _this.showLogin = false
@@ -316,6 +364,26 @@ export default {
       } else {
         this.changeUser(parseInt(item))
       }
+    },
+    getUserList () {
+      let _this = this
+      this.$http.get('/relational/user-list/', {
+        params: {
+          username: this.userName
+        }
+      }).then(
+        function (response) {
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.userList = response.data.result
+            _this.GLOBAL.userList = response.data.result
+            _this.$store.commit('updateUserList', response.data.result)
+          } else {
+            _this.$alert(`获取用户列表失败：${response.data.msg}`)
+          }
+        }, function (response) {
+          _this.$alert('获取用户列表失败，请检查网络连接，稍后再试！')
+        })
     }
   },
   created () {

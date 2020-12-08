@@ -1,9 +1,12 @@
 
 from flask import Flask, request, make_response
 from flask_cors import *
+import operations as op
 
 app = Flask(__name__)
 app.debug = True
+
+operation = op.Operation('166.111.80.113', 9999)
 
 user_list = [
     'administrator',
@@ -44,6 +47,7 @@ global_user_privilege = {
         'developer4': False
     },
 }
+
 
 db_privileges = {
     'industry_database_0_1': {
@@ -153,9 +157,19 @@ existing_files = {
     'backup_1.sql'
 }
 
+def prepare():
+    global user_list, user_password_check, global_user_privilege, db_privileges
+    user_list = operation.get_users_list()
+    user_password_check = {
+        user: user for user in user_list
+    }
+    global_user_privilege, db_privileges = operation.get_users_privilege()
+
+
 
 def is_admin(username):
-    return username.startswith('admin')
+    return username == 'root'
+    # return username.startswith('admin')
 
 
 # Create, Delete, Update, Retrieve
@@ -210,6 +224,8 @@ def authenticate(dbtype):
     username = request.json['username']
     password = request.json['password']
     auth_success = username in user_list and user_password_check[username] == password
+    # print(username, password)
+    # auth_success = operation.interface.ident_auth(username, password)
     response = {
         'success': auth_success,
         'result': '认证成功' if auth_success else '认证失败'
@@ -220,12 +236,13 @@ def authenticate(dbtype):
 @app.route('/<string:dbtype>/user-list/', methods=['GET'])
 @cross_origin()
 def get_user_list(dbtype):
-    username = request.json['username']
+    username = request.args.get('username', '')
     request_success = username in user_list
     response = {
         'success': request_success,
         'result': user_list if request_success else []
     }
+    print(response)
     return make_response(response, 200)
 
 
@@ -248,6 +265,7 @@ def get_user_privilege_list(dbtype):
         'success': request_success,
         'result': [global_privilege] if request_success else []
     }
+    print(response)
     return make_response(response, 200)
 
 
@@ -258,12 +276,23 @@ def update_user_privilege_list(dbtype):
     username = request.json['username']
     request_success = username in user_list and is_admin(username)
     if request_success:
+        grant_units = []
+        revoke_units = []
         new_privilege_list = request.json['privilege']
-        print(new_privilege_list)
+        # print(new_privilege_list)
         for privilege in new_privilege_list[0]['children']:
             for username in user_list:
-                global_user_privilege[privilege['title']][username] = privilege['granted'][username]
-        print(global_user_privilege)
+                # 创建, root, True
+                privilege_unit = (privilege['title'], username, privilege['granted'][username])
+                old_state = global_user_privilege[privilege['title']][username]
+                if old_state and not privilege_unit[2]:
+                    revoke_units.append(privilege_unit)
+                elif privilege_unit[2] and not old_state:
+                    grant_units.append(privilege_unit)
+                # global_user_privilege[privilege['title']][username] = privilege['granted'][username]
+        # print(global_user_privilege)
+        print('Grant: ', grant_units)
+        print('Revoke: ', revoke_units)
     response = {
         'success': request_success,
         'result': '更新成功' if request_success else '更新失败'
@@ -717,5 +746,35 @@ def delete_file(dbtype):
         }
     return make_response(response, 200)
 
+
+@app.route('/set-password/', methods=['POST'])
+@cross_origin()
+def set_password():
+    username = request.json['username']
+    password = request.json['password']
+    request_success = username in user_password_check
+    if request_success:
+        user_password_check[username] = password
+        response = {
+            'success': True,
+            'result': '',
+            'msg': '更改成功'
+        }
+    else:
+        response = {
+            'success': False,
+            'result': '',
+            'msg': '用户不存在'
+        }
+    return make_response(response, 200)
+
+
 if __name__ == '__main__':
+    prepare()
     app.run(host='localhost',port=5000,debug=True)
+    # host = '166.111.80.113'
+    # port = 9999
+    # import operations as op
+    # operation = op.Operation(host, port)
+    # print(operation.get_users_list())
+    # print(operation.get_users_privilege())

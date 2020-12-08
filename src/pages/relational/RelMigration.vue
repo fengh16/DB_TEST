@@ -143,6 +143,14 @@
           >
           </el-table-column>
         </el-table>
+        <el-input type="textarea"
+                  :rows="20"
+                  placeholder=""
+                  v-model="fileContent"
+                  readonly="true"
+                  autosize="false"
+                  resize="none">
+        </el-input>
       </div>
       <div class="file-text" v-if="shouldDisplayFileData">
         <h>{{fileString}}</h>
@@ -219,7 +227,8 @@ export default {
       filenameDialogShow_6: false,
       filenameString: '',
       fileString: '',
-      method: ''
+      method: '',
+      fileContent: 'asdddddddddddddddddd\nddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
     }
   },
   computed: {

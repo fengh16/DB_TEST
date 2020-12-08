@@ -744,7 +744,6 @@ def delete_file(dbtype):
             'result': '',
             'msg': '文件不存在'
         }
-
     return make_response(response, 200)
 
 

@@ -52,6 +52,39 @@
           </el-table-column>
         </el-table>
       </div>
+      <el-dialog title="dump命令备份数据" :visible.sync="filenameDialogShow_0">
+        <el-form>
+          <el-form-item label="文件路径">
+            <el-input v-model="filenameString" autocomplete="off" placeholder="输入文件路径"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="filenameDialogShow_0=false">取 消</el-button>
+          <el-button type="primary" @click="exportDataShell">执 行</el-button>
+        </div>
+      </el-dialog>
+      <el-dialog title="import命令恢复数据" :visible.sync="filenameDialogShow_1">
+        <el-form>
+          <el-form-item label="文件路径">
+            <el-input v-model="filenameString" autocomplete="off" placeholder="输入文件路径"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="filenameDialogShow_1=false">取 消</el-button>
+          <el-button type="primary" @click="importDataShell">执 行</el-button>
+        </div>
+      </el-dialog>
+      <el-dialog title="查看文件" :visible.sync="filenameDialogShow_3">
+        <el-form>
+          <el-form-item label="文件路径">
+            <el-input v-model="filenameString" autocomplete="off" placeholder="输入文件路径"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="filenameDialogShow_3=false">取 消</el-button>
+          <el-button type="primary" @click="getFile">执 行</el-button>
+        </div>
+      </el-dialog>
     </el-col>
     <el-col :span="12" :offset="1" v-loading="loading">
       <h1>查看测试结果</h1>
@@ -76,7 +109,9 @@
           >
           </el-table-column>
         </el-table>
-
+      </div>
+      <div class="file-text" v-if="shouldDisplayFileData">
+        <h>{{fileString}}</h>
       </div>
     </el-col>
   </el-row>
@@ -93,12 +128,16 @@ export default {
         id: 0,
         title: 'dump命令备份数据',
         tableName: '',
-        needParam: false
+        needParam: true,
+        param: '',
+        paramHint: '输入文件路径'
       }, {
         id: 1,
         title: 'import命令恢复数据',
         tableName: '',
-        needParam: false
+        needParam: true,
+        param: '',
+        paramHint: '输入文件路径'
       }, {
         id: 2,
         title: '查看表数据',
@@ -114,12 +153,21 @@ export default {
       dataTableSchema: [],
       currentTableName: '',
       currentFocusOperation: 0,
-      loading: false
+      loading: false,
+      filenameDialogShow_0: false, // 每个对话框的显示由单独的变量控制
+      filenameDialogShow_1: false,
+      filenameDialogShow_3: false,
+      filenameString: '',
+      fileString: '',
+      method: ''
     }
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 2// 只有查看表数据一项显示表头
+      return this.currentFocusOperation === 2
+    },
+    shouldDisplayFileData  () {
+      return this.currentFocusOperation === 3
     }
   },
   methods: {
@@ -192,14 +240,114 @@ export default {
           this.$alert('获取数据表失败，请检查网络连接，稍后再试！')
         })
     },
+    exportDataShell () {
+      let _this = this
+      let tableName = this.operationTable[0].tableName
+      this.filenameDialogShow_0 = false
+      this.$http.post('/relational/export-data/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: tableName,
+        filename: this.filenameString,
+        instanceId: 0,
+        method: 'shell'
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            message: `导出表 ${tableName} 成功`,
+            offset: 200
+          })
+        } else {
+          _this.$notify({
+            message: `导出表 ${tableName} 失败：${response.data.msg}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        _this.loading = false
+        _this.$notify({
+          message: `导出表 ${tableName} 失败：网络错误`
+        })
+      })
+    },
+    importDataShell () {
+      let _this = this
+      let tableName = this.operationTable[1].tableName
+      this.filenameDialogShow_1 = false
+      this.$http.post('/relational/import-data/', {
+        username: this.GLOBAL.username,
+        databaseName: this.currentDatabaseName,
+        tableName: tableName,
+        filename: this.filenameString,
+        instanceId: 0,
+        method: 'shell'
+      }).then(response => {
+        _this.loading = false
+        if (response.status === 200 && response.data.success) {
+          console.log(response.data)
+          _this.$notify({
+            message: `导入表 ${tableName} 成功`,
+            offset: 200
+          })
+        } else {
+          _this.$notify({
+            message: `导入表 ${tableName} 失败：${response.data.msg}`,
+            offset: 200
+          })
+        }
+      }, response => {
+        _this.loading = false
+        _this.$notify({
+          message: `导入表 ${tableName} 失败：网络错误`
+        })
+      })
+    },
+    getFile () {
+      let _this = this
+      this.filenameDialogShow_3 = false
+      this.$http.get('/relational/select-file/', {
+        params: {
+          username: this.GLOBAL.username,
+          filename: this.filenameString
+        }
+      }).then(
+        function (response) {
+          console.log(response)
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.fileString = response.data.result
+            _this.loading = false
+          } else {
+            _this.$alert('查看文件失败：没有权限')
+            _this.loading = false
+          }
+        }, function (response) {
+          _this.$alert('查看文件失败，请检查网络连接，稍后再试！')
+          _this.loading = false
+        })
+    },
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
+        case 0:
+          this.currentFocusOperation = operationId
+          this.filenameDialogShow_0 = true
+          break
+        case 1:
+          this.currentFocusOperation = operationId
+          this.filenameDialogShow_1 = true
+          break
         case 2:
           // select
           this.loading = true
           this.getDisplayTableSchema()
           this.getDisplayTable(2)
+          break
+        case 3:
+          this.currentFocusOperation = operationId
+          this.filenameDialogShow_3 = true
           break
       }
     }
@@ -225,5 +373,8 @@ export default {
     border-left: 4px solid #409eff;
     margin-right: 20px;
     padding-left: 8px;
+  }
+  .file-text{
+    margin-top: 20px;
   }
 </style>

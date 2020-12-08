@@ -4,16 +4,16 @@
       <h1>权限管理测试</h1>
       <div class="left-indent">
         <div class="from-left">
-          <p v-if="this.GLOBAL.username!=='administrator'">无权查看此页面</p>
+          <p v-if="!this.$store.state.isAdmin">无权查看此页面</p>
           <el-button
-            v-if="this.GLOBAL.username==='administrator'"
+            v-if="this.$store.state.isAdmin"
             type="primary"
             plain
             v-loading="isSavingChanges"
             @click="onSavePrivilegeSetting">保存</el-button>
         </div>
         <el-table
-          v-if="this.GLOBAL.username==='administrator'"
+          v-if="this.$store.state.isAdmin"
           :data="operationTable"
                   ref="operations"
                   stripe
@@ -27,14 +27,14 @@
             width="120"
           ></el-table-column>
           <el-table-column
-            v-for="(username, index) in userList"
+            v-for="(username, index) in this.$store.state.userList"
             :label="'用户 '+username"
             :key="index"
             align="center"
           >
             <template slot-scope="scope">
               <el-switch
-                :disabled="username === 'administrator'"
+                :disabled="username === 'root'"
                 v-model="scope.row.granted[username]"
                 active-text="允许"
                 inactive-text="禁止"
@@ -57,14 +57,10 @@ export default {
     return {
       operationTable: [],
       operationTableTitle: '',
-      isSavingChanges: false,
-      userList: ['administrator', 'developer1', 'developer2', 'developer3', 'developer4']
+      isSavingChanges: false
     }
   },
   methods: {
-    getUserList () {
-
-    },
     getPrivilegeList () {
       let _this = this
       console.log(this.GLOBAL.username)

@@ -77,6 +77,14 @@
           >
           </el-table-column>
         </el-table>
+        <el-input type="textarea"
+                  :rows="20"
+                  placeholder=""
+                  v-model="fileContent"
+                  readonly="true"
+                  autosize="false"
+                  resize="none">
+        </el-input>
       </div>
     </el-col>
   </el-row>
@@ -124,15 +132,19 @@ export default {
       dataTableSchema: [],
       currentTableName: '',
       currentFocusOperation: 0,
-      loading: false
+      loading: false,
+      fileContent: 'asdddddddddddddddddd\nddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
     }
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 6// 只有查看表数据一项显示表头
+      return this.currentFocusOperation === 4// 只有查看表数据一项显示表头
     },
     shouldDisplayDataTable () {
       return this.currentFocusOperation === 4
+    },
+    shouldDisplayFileContent () {
+      return this.currentFocusOperation === 5
     }
   },
   methods: {
@@ -221,6 +233,9 @@ export default {
           _this.loading = false
         })
     },
+    selectFile () {
+      this.currentFocusOperation = 5
+    },
     onExecute (operationId) {
       console.log(operationId)
       switch (operationId) {
@@ -229,6 +244,9 @@ export default {
           this.loading = true
           this.getDisplayTableSchema(4)
           this.getDisplayTable(4)
+          break
+        case 5:
+          this.selectFile()
           break
       }
     }

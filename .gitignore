@@ -8,6 +8,8 @@ yarn-error.log*
 /test/e2e/reports/
 selenium-debug.log
 
+/flask_backend/__pycache__/*.pyc
+
 # Editor directories and files
 .idea
 .vscode
@@ -16,3 +18,5 @@ selenium-debug.log
 *.njsproj
 *.sln
 package-lock.json
+__pycache__
+flask_backend/__pycache__

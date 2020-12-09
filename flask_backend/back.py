@@ -467,6 +467,7 @@ def update(dbtype):
 @app.route('/<string:dbtype>/delete/', methods=['POST'])
 @cross_origin()
 def delete(dbtype):
+  if dbtype == 'relational':
     username = request.json['username']
     instance_id = int(request.json['instanceId'])
     db_name = request.json['databaseName']
@@ -485,11 +486,21 @@ def delete(dbtype):
         }
     return make_response(response, 200)
 
+  elif dbtype=='graph':
+    username = request.json['username']
+    instance_id = int(request.json['instanceId'])
+    response = {
+      'success': True,
+      'result': '删除成功'
+    }
+
+    return make_response(response, 200)
 
 # 14. 查看数据
 @app.route('/<string:dbtype>/select/', methods=['GET'])
 @cross_origin()
 def select(dbtype):
+  if dbtype=='relational':
     username = request.args.get('username', '')
     instance_id = int(request.args.get('instanceId', '0'))
     db_name = request.args.get('databaseName', '')
@@ -531,6 +542,34 @@ def select(dbtype):
             }
     return make_response(response, 200)
 
+  elif dbtype=='graph':
+    username = request.args.get('username', '')
+    instance_id = int(request.args.get('instanceId', '0'))
+    response = {
+      'success': True,
+      'result': {
+        "schema":[{
+          "id":0,
+          "columnName":"user_id",
+          "columnType":"integer"
+        },{
+          "id":1,
+          "columnName":"name",
+          "columnType":"string"
+        }],
+        "data":[{
+          "id":0,
+          "user_id":1,
+          "name":"Alice"
+        },{
+          "id":1,
+          "user_id":2,
+          "name":"Bob"
+        }]
+      },
+      'msg': '查找成功'
+    }
+    return make_response(response, 200)
 
 # 15. 查看嵌入后数据信息
 @app.route('/<string:dbtype>/select-embedding/', methods=['GET'])
@@ -647,6 +686,7 @@ def drop_database(dbtype):
 @app.route('/<string:dbtype>/import-data/', methods=['POST'])
 @cross_origin()
 def import_data(dbtype):
+  if dbtype == 'relational':
     username = request.json['username']
     instance_id = int(request.json['instanceId'])
     db_name = request.json['databaseName']
@@ -667,10 +707,21 @@ def import_data(dbtype):
         }
     return make_response(response, 200)
 
+  elif dbtype=='graph':
+    username = request.json['username']
+    instance_id = int(request.json['instanceId'])
+    filename = request.json['filename']
+    response = {
+      'success': True,
+      'result': '导入成功'
+    }
+    return make_response(response, 200)
+
 
 @app.route('/<string:dbtype>/export-data/', methods=['POST'])
 @cross_origin()
 def export_data(dbtype):
+  if dbtype == 'relational':
     username = request.json['username']
     instance_id = int(request.json['instanceId'])
     db_name = request.json['databaseName']
@@ -692,6 +743,15 @@ def export_data(dbtype):
         }
     return make_response(response, 200)
 
+  elif dbtype=='graph':
+    username = request.json['username']
+    instance_id = int(request.json['instanceId'])
+    filename = request.json['filename']
+    response = {
+      'success': True,
+      'result': '导出成功'
+    }
+    return make_response(response, 200)
 
 @app.route('/<string:dbtype>/select-file/', methods=['GET'])
 @cross_origin()

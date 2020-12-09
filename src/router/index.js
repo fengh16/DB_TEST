@@ -10,6 +10,9 @@ import RelRecover from '@/pages/relational/RelRecover'
 import RelDestroy from '@/pages/relational/RelDestroy'
 import RelOperate from '@/pages/relational/RelOperate'
 import ControlRalationPage from '@/pages/relational/RelControl'
+import GraphMigration from '@/pages/graph/GraphMigration'
+import GraphRecover from '@/pages/graph/GraphRecover'
+import GraphDestroy from '@/pages/graph/GraphDestroy'
 import NotFound from '@/pages/NotFound'
 
 Vue.use(Router)
@@ -66,6 +69,21 @@ export default new Router({
       path: '/relation/Destroy_8',
       name: '关系可销毁性',
       component: RelDestroy
+    },
+    {
+      path: '/graph/Migrate_6',
+      name: '图可迁移性',
+      component: GraphMigration
+    },
+    {
+      path: '/graph/Recover_7',
+      name: '图可恢复性',
+      component: GraphRecover
+    },
+    {
+      path: '/graph/Destroy_8',
+      name: '图可销毁性',
+      component: GraphDestroy
     },
     {
       path: '/404',

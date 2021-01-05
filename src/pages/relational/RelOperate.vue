@@ -14,6 +14,7 @@
             </el-option>
           </el-select>
           <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
+          <el-button type="primary" plain @click="onClickDropDatabase">删除数据库</el-button>
         </div>
         <el-table :data="operationTable"
                   ref="operations"
@@ -34,11 +35,19 @@
             align="center"
           >
             <template slot-scope="scope">
-              <el-input
-                placeholder="输入表名"
-                v-model="scope.row.tableName"
-                clearable>
-              </el-input>
+              <el-select v-model="scope.row.tableName" placeholder="选择表名">
+                <el-option
+                  v-for="table in tableList"
+                  :key="table.label"
+                  :label="table.label"
+                  :value="table.value"
+                ></el-option>
+              </el-select>
+<!--              <el-input-->
+<!--                placeholder="输入表名"-->
+<!--                v-model="scope.row.tableName"-->
+<!--                clearable>-->
+<!--              </el-input>-->
             </template>
           </el-table-column>
 <!--          <el-table-column-->
@@ -190,6 +199,7 @@ export default {
         param: '',
         paramHint: '输入要嵌入的信息'
       }],
+      tableList: [],
       dataTable: [],
       dataTableSchema: [],
       currentTableName: '',
@@ -197,6 +207,7 @@ export default {
       loading: false,
       newDatabaseName: '',
       newDatabaseDialogShow: false,
+      dropDatabaseDialogShow: false,
       embeddingString: '',
       embeddingDialogShow: false
     }
@@ -231,11 +242,38 @@ export default {
             if (response.data.result.length > 0) {
               _this.currentDatabaseName = _this.databaseList[0].value
             }
+            _this.getTableList()
           } else {
             _this.$alert('获取数据库列表失败：没有权限')
           }
         }, function (response) {
           _this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
+        })
+    },
+    getTableList () {
+      let _this = this
+      this.$http.get('/relational/list-table/', {
+        params: {
+          username: this.GLOBAL.username,
+          instanceId: 0,
+          databaseName: this.currentDatabaseName
+        }
+      }).then(
+        function (response) {
+          if (response.status === 200 && response.data.success) {
+            console.log(response.data)
+            _this.tableList = []
+            response.data.result.forEach(e => {
+              _this.tableList.push({
+                value: e,
+                label: e
+              })
+            })
+          } else {
+            _this.$alert(`获取数据表列表失败：${response.data.msg}`)
+          }
+        }, function (response) {
+          _this.$alert(`获取数据表列表失败：${response.data.msg}`)
         })
     },
     getDisplayTableSchema (operationId) {
@@ -309,14 +347,15 @@ export default {
       }).then(response => {
         console.log(response)
         if (response.status === 200 && response.data.success) {
-          _this.GLOBAL.databaseList.push(newDatabaseName)
-          _this.databaseList.push({
-            value: newDatabaseName,
-            label: newDatabaseName
-          })
+          // _this.GLOBAL.databaseList.push(newDatabaseName)
+          // _this.databaseList.push({
+          //   value: newDatabaseName,
+          //   label: newDatabaseName
+          // })
+          _this.getDatabaseList()
           _this.$alert('创建数据库成功！')
         } else {
-          _this.$alert(`创建数据库失败：${response.data.result}`)
+          _this.$alert(`创建数据库失败：${response.data.msg}`)
         }
       }, response => {
         _this.$alert('创建数据库失败：网络错误')
@@ -352,6 +391,26 @@ export default {
     },
     onClickCreateDatabase () {
       this.newDatabaseDialogShow = true
+    },
+    onClickDropDatabase () {
+      this.dropDatabaseDialogShow = true
+      let _this = this
+      this.$http.post('/relational/drop-database/', {
+        databaseName: this.currentDatabaseName,
+        username: this.GLOBAL.username,
+        instanceId: 0
+      }).then(response => {
+        console.log(response)
+        _this.dropDatabaseDialogShow = false
+        if (response.status === 200 && response.data.success) {
+          _this.getDatabaseList()
+          _this.$alert('删除数据库成功！')
+        } else {
+          _this.$alert(`删除数据库失败：${response.data.msg}`)
+        }
+      }, response => {
+        _this.$alert('删除数据库失败：网络错误')
+      })
     },
     onDebug () {
       let tableNames = []
@@ -534,6 +593,11 @@ export default {
           // this.getDisplayTable(6)
           break
       }
+    }
+  },
+  watch: {
+    currentDatabaseName: function (val) {
+      this.getTableList()
     }
   },
   created () {

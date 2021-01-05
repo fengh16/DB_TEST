@@ -96,7 +96,7 @@ response = {
 'POST /graph/node-modeling/'
 
 param = {
-    
+
 }
 
 body = {
@@ -123,7 +123,7 @@ response = {
 'POST /graph/edge-modeling/'
 
 param = {
-    
+
 }
 
 body = {
@@ -155,13 +155,31 @@ param = {
 }
 
 body = {
-    
+
 }
 
 response = {
     200: {
         "success": bool,
-        "result": [object],
+        "result": {
+            "schema": [{
+                "id": 0,
+                "columnName": "user_id",
+                "columnType": "integer"
+            }, {
+                "id": 1,
+                "columnName": "name",
+                "columnType": "string"
+            }],
+            "data": [{
+                "id": 0,
+                "user_id": 1,
+                "name": "Alice"
+            }, {
+                "id": 1,
+                "user_id": 2,
+                "name": "Bob"
+            }],
         "msg": str
     }
 }
@@ -175,7 +193,7 @@ response = {
 'POST /graph/insert/'
 
 param = {
-    
+
 }
 
 body = {
@@ -200,7 +218,7 @@ response = {
 'POST /graph/delete/'
 
 param = {
-    
+
 }
 
 body = {

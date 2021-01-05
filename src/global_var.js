@@ -5,6 +5,14 @@ let userList = []
 let privilegeList = []
 let databaseList = []
 
+// function userList () {
+//   return JSON.parse(localStorage.getItem('userList'))
+// }
+//
+// function isAdmin () {
+//   return JSON.parse(localStorage.getItem('isAdmin')) === true
+// }
+
 export default {
   systemName,
   username,

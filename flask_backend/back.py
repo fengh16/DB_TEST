@@ -7,9 +7,10 @@ app = Flask(__name__)
 app.debug = True
 
 operation = op.Operation('166.111.80.113', 9999)
+#operation = None
 
 user_list = [
-    'administrator',
+    'root',
     'developer1',
     'developer2',
     'developer3',
@@ -158,13 +159,13 @@ existing_files = {
 }
 
 def prepare():
-    global user_list, user_password_check, global_user_privilege, db_privileges
+    global user_list, user_password_check, global_user_privilege, db_privileges, db
     user_list = operation.get_users_list()
     user_password_check = {
         user: user for user in user_list
     }
     global_user_privilege, db_privileges = operation.get_users_privilege()
-
+    db = operation.get_dbs_content('root')
 
 
 def is_admin(username):
@@ -195,8 +196,28 @@ def have_table_privilege(username, instance_id, db_name, access_type):
         and db_privileges[db_name][f'{cn_name}表权限'][username]
 
 
-
 # platform
+@app.route('/change-user/', methods=['POST'])
+@cross_origin()
+def change_user():
+    username = request.json['username']
+    password = request.json['password']
+    login_success = username in user_list
+    if login_success:
+        response = {
+            'success': True,
+            'result': '登录成功',
+            'usertype': '管理员' if is_admin(username) else '普通用户'
+        }
+    else:
+        response = {
+            'success': True,
+            'result': '登录失败',
+            'usertype': '管理员' if is_admin else '普通用户'
+        }
+    return make_response(response)
+
+
 @app.route('/login/', methods=['POST'])
 @cross_origin()
 def login():
@@ -272,27 +293,50 @@ def get_user_privilege_list(dbtype):
 @app.route('/<string:dbtype>/update-user-privilege-list/', methods=['POST'])
 @cross_origin()
 def update_user_privilege_list(dbtype):
-    global global_user_privilege
+    global global_user_privilege, db_privileges
     username = request.json['username']
     request_success = username in user_list and is_admin(username)
+    privilege_map = {
+        '创建': 'create',
+        '访问': 'select',
+        '删除': 'drop'
+    }
     if request_success:
         grant_units = []
         revoke_units = []
         new_privilege_list = request.json['privilege']
+        print('old: ')
+        print(global_user_privilege)
+        print('new: ')
+        print(new_privilege_list[0])
+
+        new_global_user_privilege = {
+            child['title']: child['granted'] for child in new_privilege_list[0]['children']
+        }
         # print(new_privilege_list)
-        for privilege in new_privilege_list[0]['children']:
+        for title in new_global_user_privilege:
             for username in user_list:
                 # 创建, root, True
-                privilege_unit = (privilege['title'], username, privilege['granted'][username])
-                old_state = global_user_privilege[privilege['title']][username]
-                if old_state and not privilege_unit[2]:
-                    revoke_units.append(privilege_unit)
-                elif privilege_unit[2] and not old_state:
-                    grant_units.append(privilege_unit)
-                # global_user_privilege[privilege['title']][username] = privilege['granted'][username]
-        # print(global_user_privilege)
+                old_state = global_user_privilege[title][username]
+                new_state = new_global_user_privilege[title][username]
+                if old_state and not new_state:
+                    revoke_units.append((username, privilege_map[title[:2]], ''))
+                elif not old_state and new_state:
+                    grant_units.append((username, privilege_map[title[:2]], ''))
+
         print('Grant: ', grant_units)
         print('Revoke: ', revoke_units)
+        for grant in grant_units:
+            username, privilege, dbname = grant
+            ins_id = 0
+            operation.interface.grant_priv(username, privilege, True, dbname, ins_id)
+        for revoke in revoke_units:
+            username, privilege, dbname = revoke
+            ins_id = 0
+            operation.interface.revoke_priv(username, privilege, True, dbname, ins_id)
+        
+        global_user_privilege = new_global_user_privilege
+        db_privileges = new_privilege_list[1:] if len(new_privilege_list) > 1 else db_privileges
     response = {
         'success': request_success,
         'result': '更新成功' if request_success else '更新失败'
@@ -303,21 +347,20 @@ def update_user_privilege_list(dbtype):
 @app.route('/<string:dbtype>/create-database/', methods=['POST'])
 @cross_origin()
 def create_database(dbtype):
-    global db
+    global db, global_user_privilege, db_privileges
     db_name = request.json['databaseName']
     username = request.json['username']
     instance_id = int(request.json['instanceId'])
     request_success = have_db_privilege(username, instance_id, 'C')
     if request_success:
-        create_success = db_name not in db[instance_id]['db_list']
+        create_success = operation.interface.create_db(username, db_name, instance_id)
         if create_success:
-            db[instance_id]['db_list'].append(db_name)
-            db[instance_id][db_name] = {
-                'table_list': []
-            }
+            db = operation.get_dbs_content('root')
+            # global_user_privilege, db_privileges = operation.get_users_privilege()
         response = {
             'success': create_success,
-            'result': '创建成功' if create_success else '创建失败'
+            'result': '创建成功' if create_success else '创建失败',
+            'msg': '' if create_success else '数据库已经存在'
         }
     else:
         response = {
@@ -339,6 +382,32 @@ def list_database(dbtype):
         'success': request_success,
         'result': db[instance_id]['db_list'] if request_success else []
     }
+    return make_response(response, 200)
+
+
+@app.route('/<string:dbtype>/list-table/', methods=['GET'])
+@cross_origin()
+def list_table(dbtype):
+    global db
+    username = request.args.get('username', '')
+    instance_id = int(request.args.get('instanceId', 0))
+    database_name = request.args.get('databaseName', '')
+    authed = global_user_privilege['访问数据库权限'][username]
+    request_success = username in user_list and authed and instance_id in [0, 1] and database_name in db[instance_id]['db_list']
+    table_list = db[instance_id][database_name]['table_list']
+    
+    if authed:
+        response = {
+            'success': request_success,
+            'result': table_list if request_success else [],
+            'msg': '' if request_success else '输入参数有误'
+        }
+    else:
+        response = {
+            'success': False,
+            'result': [],
+            'msg': '没有权限'
+        }
     return make_response(response, 200)
 
 
@@ -619,27 +688,23 @@ def drop_database(dbtype):
     username = request.json['username']
     instance_id = int(request.json['instanceId'])
     db_name = request.json['databaseName']
-    if db_name not in db[instance_id]['db_list']:
+
+    authed = have_db_privilege(username, instance_id, 'D')
+    if authed:
+        drop_success = operation.interface.drop_db(username, db_name, instance_id)
+        if drop_success:
+            db = operation.get_dbs_content('root')
+        response = {
+            'success': drop_success,
+            'result': '删除成功' if drop_success else '删除失败',
+            'msg': '' if drop_success else '数据库不存在'
+        }
+    else:
         response = {
             'success': False,
             'result': '删除失败',
-            'msg': '不存在该数据库'
+            'msg': '没有权限'
         }
-    else:
-        authed = have_db_privilege(username, instance_id, 'D')
-        if authed:
-            db[instance_id]['db_list'].remove(db_name)
-            del db[instance_id][db_name]
-            response = {
-                'success': True,
-                'result': '删除成功'
-            }
-        else:
-            response = {
-                'success': False,
-                'result': '删除失败',
-                'msg': '没有权限'
-            }
     print(db[instance_id])
     return make_response(response, 200)
 

@@ -12,7 +12,7 @@
                 </span>
               <el-dropdown-menu slot="dropdown">
                 <!--<el-dropdown-item icon="el-icon-plus" command="settings">设置</el-dropdown-item>-->
-                <el-dropdown-item v-for="(username, i) in this.$store.state.userList" :key="i" :command="i">{{username}}</el-dropdown-item>
+                <el-dropdown-item v-for="(username, i) in this.userList" :key="i" :command="i">{{username}}</el-dropdown-item>
                 <el-dropdown-item icon="el-icon-circle-plus" command="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
@@ -224,13 +224,16 @@ export default {
             console.log(response.data)
             if (response.data.usertype === '管理员') {
               _this.userAdmin = true
+              localStorage.setItem('isAdmin', 'true')
               _this.GLOBAL.isAdmin = true
             } else {
               _this.userAdmin = false
+              localStorage.setItem('isAdmin', 'false')
               _this.GLOBAL.isAdmin = false
             }
             _this.userName = nowUsername
             _this.GLOBAL.username = nowUsername
+            localStorage.setItem('username', nowUsername)
             _this.$store.commit('updateUsername', nowUsername)
             document.cookie = 'username=' + nowUsername
             _this.loggedIn = true
@@ -248,6 +251,7 @@ export default {
     },
     doSetPassword: function () {
       this.setPasswordUsername = this.$store.state.username
+      this.setPasswordUsername = localStorage.getItem('username')
       this.setPasswordTableShow = true
     },
     doAuth: function () {
@@ -287,10 +291,12 @@ export default {
             console.log(response.data)
             _this.authTableShow = false
             _this.authed = true
+            localStorage.setItem('authed', 'true')
             _this.$store.commit('updateAuth', true)
             _this.$alert(response.data.result)
             document.cookie = 'authed=true'
           } else {
+            localStorage.setItem('authed', 'false')
             _this.$store.commit('updateAuth', false)
             _this.$alert('认证失败，请检查密码并稍后再试！')
           }
@@ -331,19 +337,24 @@ export default {
       this.showLogin = false
       this.appLogging = true
       let _this = this
-      this.$http.post('/login/', {
+      this.$http.post('/change-user/', {
         username: newUsername,
         password: password
       }).then((response) => {
         if (response.status === 200 && response.data.result === '登录成功') {
           if (response.data.usertype === '管理员') {
+            localStorage.setItem('isAdmin', 'true')
+            this.GLOBAL.isAdmin = true
             _this.userAdmin = true
           } else {
+            localStorage.setItem('isAdmin', 'false')
+            this.GLOBAL.isAdmin = false
             _this.userAdmin = false
           }
           _this.userName = newUsername
-          _this.password = password
+          // _this.password = password
           _this.GLOBAL.username = newUsername
+          localStorage.setItem('username', newUsername)
           _this.$store.commit('updateUsername', newUsername)
           document.cookie = 'username=' + newUsername
           _this.loggedIn = true
@@ -375,8 +386,10 @@ export default {
         function (response) {
           if (response.status === 200 && response.data.success) {
             console.log(response.data)
-            _this.userList = response.data.result
+            // _this.userList = response.data.result
             _this.GLOBAL.userList = response.data.result
+            localStorage.setItem('userList', JSON.stringify(response.data.result))
+            _this.readUserListFromLocalStorage()
             _this.$store.commit('updateUserList', response.data.result)
           } else {
             _this.$alert(`获取用户列表失败：${response.data.msg}`)
@@ -384,6 +397,9 @@ export default {
         }, function (response) {
           _this.$alert('获取用户列表失败，请检查网络连接，稍后再试！')
         })
+    },
+    readUserListFromLocalStorage () {
+      this.userList = JSON.parse(localStorage.getItem('userList'))
     }
   },
   created () {
@@ -408,6 +424,10 @@ export default {
       this.loggedIn = true
       this.showLogin = false
     }
+    this.readUserListFromLocalStorage()
+    this.GLOBAL.userName = localStorage.getItem('username')
+    this.GLOBAL.userList = JSON.parse(localStorage.getItem('userList'))
+    this.GLOBAL.isAdmin = JSON.parse(localStorage.getItem('isAdmin'))
   }
 }
 </script>

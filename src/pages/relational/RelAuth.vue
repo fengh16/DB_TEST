@@ -4,16 +4,16 @@
       <h1>权限管理测试</h1>
       <div class="left-indent">
         <div class="from-left">
-          <p v-if="!this.$store.state.isAdmin">无权查看此页面</p>
+          <p v-if="!this.GLOBAL.isAdmin">无权查看此页面</p>
           <el-button
-            v-if="this.$store.state.isAdmin"
+            v-if="this.GLOBAL.isAdmin"
             type="primary"
             plain
             v-loading="isSavingChanges"
             @click="onSavePrivilegeSetting">保存</el-button>
         </div>
         <el-table
-          v-if="this.$store.state.isAdmin"
+          v-if="this.GLOBAL.isAdmin"
           :data="operationTable"
                   ref="operations"
                   stripe
@@ -27,7 +27,7 @@
             width="120"
           ></el-table-column>
           <el-table-column
-            v-for="(username, index) in this.$store.state.userList"
+            v-for="(username, index) in this.GLOBAL.userList"
             :label="'用户 '+username"
             :key="index"
             align="center"

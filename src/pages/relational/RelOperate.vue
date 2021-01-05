@@ -308,7 +308,7 @@ export default {
     },
     getDisplayTable (operationId) {
       let _this = this
-      this.$http.get('http://localhost:5000/relational/select/', {
+      this.$http.get('/relational/select/', {
         params: {
           username: this.GLOBAL.username,
           databaseName: this.currentDatabaseName,

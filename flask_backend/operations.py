@@ -335,6 +335,45 @@ class Operation(object):
                     ans_table[one_db][tbl_priv_map['drop']][one_user] = True
         return [ans_db, ans_table]
 
+    def refresh_table(self, user: str, dbname: str, tablename: str, ins_id: int=0):
+        key_map = {
+            'PRI': 'primary key',
+            'MUL': 'foreign key',
+            '': ''
+        }
+        table = {
+            'schema': [],
+            'rows': []
+        }
+        _tbl_schema = self.interface.get_table_schema(user, dbname, tablename, ins_id)
+        if len(_tbl_schema) == 0:
+            return table
+        _schema_len = len(_tbl_schema['Field'])
+        table['schema'] = [{
+            'name': _tbl_schema['Field'][_],
+            'type': _tbl_schema['Type'][_],
+            'constraint': key_map[_tbl_schema['Key'][_]]
+            }
+            for _ in range(_schema_len)
+        ]
+        _tbl_rows = self.interface.get_table_data(user, dbname, tablename, ins_id)
+        _rows_len = len(_tbl_rows)
+        if _rows_len == 0:
+            table['rows'] = []
+            return table
+        __row_col = len(_tbl_rows[0])
+        if __row_col != _schema_len:
+            table['rows'] = []
+            return table
+        table['rows'] = [
+            {
+                _tbl_schema['Field'][_]: _tbl_rows[__][_]
+                for _ in range(_schema_len)
+            }
+            for __ in range(_rows_len)
+        ]
+        return table
+
     def get_dbs_content(self, user: str='root') -> Dict:
         '''
         获取数据库所有内容，默认是 root 用户所能访问的 实例 0 和 1 的数据，即所有数据
@@ -371,36 +410,37 @@ class Operation(object):
                 tbl_list = self.interface.get_tables_list(user, one_db, ins_id)
                 res[one_db]['table_list'] = tbl_list
                 for one_tbl in tbl_list:
-                    res[one_db][one_tbl] = dict()
-                    _tbl_schema = self.interface.get_table_schema(user, one_db, one_tbl, ins_id)
-                    if len(_tbl_schema) == 0:
-                        res[one_db][one_tbl]['schema'] = []
-                        res[one_db][one_tbl]['rows'] = []
-                        continue
-                    _schema_len = len(_tbl_schema['Field'])
-                    res[one_db][one_tbl]['schema'] = [{
-                        'name': _tbl_schema['Field'][_],
-                        'type': _tbl_schema['Type'][_],
-                        'constraint': key_map[_tbl_schema['Key'][_]]
-                        }
-                        for _ in range(_schema_len)
-                    ]
-                    _tbl_rows = self.interface.get_table_data(user, one_db, one_tbl, ins_id)
-                    _rows_len = len(_tbl_rows)
-                    if _rows_len == 0:
-                        res[one_db][one_tbl]['rows'] = []
-                        continue
-                    __row_col = len(_tbl_rows[0])
-                    if __row_col != _schema_len:
-                        res[one_db][one_tbl]['rows'] = []
-                        continue
-                    res[one_db][one_tbl]['rows'] = [
-                        {
-                            _tbl_schema['Field'][_]: _tbl_rows[__][_]
-                            for _ in range(_schema_len)
-                        }
-                        for __ in range(_rows_len)
-                    ]
+                    res[one_db][one_tbl] = self.refresh_table(user, one_db, one_tbl, ins_id)
+                    # res[one_db][one_tbl] = dict()
+                    # _tbl_schema = self.interface.get_table_schema(user, one_db, one_tbl, ins_id)
+                    # if len(_tbl_schema) == 0:
+                    #     res[one_db][one_tbl]['schema'] = []
+                    #     res[one_db][one_tbl]['rows'] = []
+                    #     continue
+                    # _schema_len = len(_tbl_schema['Field'])
+                    # res[one_db][one_tbl]['schema'] = [{
+                    #     'name': _tbl_schema['Field'][_],
+                    #     'type': _tbl_schema['Type'][_],
+                    #     'constraint': key_map[_tbl_schema['Key'][_]]
+                    #     }
+                    #     for _ in range(_schema_len)
+                    # ]
+                    # _tbl_rows = self.interface.get_table_data(user, one_db, one_tbl, ins_id)
+                    # _rows_len = len(_tbl_rows)
+                    # if _rows_len == 0:
+                    #     res[one_db][one_tbl]['rows'] = []
+                    #     continue
+                    # __row_col = len(_tbl_rows[0])
+                    # if __row_col != _schema_len:
+                    #     res[one_db][one_tbl]['rows'] = []
+                    #     continue
+                    # res[one_db][one_tbl]['rows'] = [
+                    #     {
+                    #         _tbl_schema['Field'][_]: _tbl_rows[__][_]
+                    #         for _ in range(_schema_len)
+                    #     }
+                    #     for __ in range(_rows_len)
+                    # ]
             return res
         ans[0] = get_one_db_content(user, 0)
         ans[1] = get_one_db_content(user, 1)

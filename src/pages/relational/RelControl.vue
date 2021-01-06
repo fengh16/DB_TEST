@@ -13,13 +13,21 @@
               :value="item.value">
             </el-option>
           </el-select>
-          <el-button type="primary" plain @click="onClickDecode">解密</el-button>
+<!--          <el-button type="primary" plain @click="onClickDecode">解密</el-button>-->
         </div>
         <el-table :data="operationTable" class="margin-top" stripe default-expand-all>
-          <el-table-column property="operationName" label="操作名称" align="left" width="100"></el-table-column>
-          <el-table-column property="table" label="表名" align="center">
+          <el-table-column property="title" label="操作名称" align="left" width="100"></el-table-column>
+          <el-table-column property="tableName" label="表名" align="center">
             <template slot-scope="scope">
-              <el-input v-model="tableName[scope.$index]" type="text"  placeholder="输入表名"></el-input>
+              <el-select v-model="scope.row.tableName" placeholder="选择表名">
+                <el-option
+                  v-for="table in tableList"
+                  :key="table.label"
+                  :label="table.label"
+                  :value="table.value"
+                ></el-option>
+              </el-select>
+<!--              <el-input v-model="tableName[scope.$index]" type="text"  placeholder="输入表名"></el-input>-->
             </template>
           </el-table-column>
           <el-table-column property="operate" label="操作" align="center" width="80">
@@ -32,37 +40,46 @@
     </el-col>
     <el-col :span="12" :offset="1">
       <h1>查看测试结果</h1>
-        <div class="from-left left-indent margin-top">
-          <el-table :data="dataTable" class="margin-top" v-if="currentOperationID === 1">
-            <el-table-column :label="displayTableTitle" align="center">
-              <el-table-column align="left" row-key="id"
-                v-for="(columnDef, index) in dataTableSchema"
-                  :key="index"
-                  :label="columnDef.columnName"
-                  :prop="columnDef.propName">
-              </el-table-column>
-            </el-table-column>
-          </el-table>
-          <el-table :data="dataTableSchema" class="margin-top" v-if="currentOperationID === 0">
-            <el-table-column :label="displayTableTitle" align="center">
-              <el-table-column
-                prop="columnName"
-                label="列名"
-                align="center"
-                ></el-table-column>
-              <el-table-column
-                prop="columnType"
-                label="类型"
-                align="left"
-                ></el-table-column>
-              <el-table-column
-                prop="columnConstraint"
-                label="约束"
-                align="left"
-              ></el-table-column>
-            </el-table-column>
-          </el-table>
+      <div>
+        <div class="title-reserved" v-if="currentOperationID === 0 || currentOperationID === 1">
+          <h1>表： {{currentTableName}}</h1>
         </div>
+        <el-table
+          v-if="currentOperationID === 1"
+          :data="dataTable"
+          ref="displayData"
+          stripe
+          row-key="id"
+          default-expand-all
+        >
+          <el-table-column
+            v-for="(columnDef, index) in dataTableSchema"
+            :prop="columnDef.columnName"
+            :label="columnDef.columnName"
+            :key="index"
+            align="center"
+          >
+
+          </el-table-column>
+        </el-table>
+        <el-table :data="dataTableSchema" v-if="currentOperationID === 0">
+          <el-table-column
+            prop="columnName"
+            label="列名"
+            align="center"
+          ></el-table-column>
+          <el-table-column
+            prop="columnType"
+            label="类型"
+            align="left"
+          ></el-table-column>
+          <el-table-column
+            prop="columnConstraint"
+            label="约束"
+            align="left"
+          ></el-table-column>
+        </el-table>
+      </div>
     </el-col>
   </el-row>
 </template>
@@ -72,30 +89,38 @@ export default {
   name: 'ControlRelationPage',
   data () {
     return {
-      encodeID: 1,
-      encodeMode: 'SHA1',
+      encodeID: 0,
+      encodeMode: '',
       encodeList: [{
         value: 0,
-        label: 'SHA1'
+        label: '不加密',
+        encodeMethod: ''
       }, {
         value: 1,
-        label: 'SHA256'
+        label: 'SHA1',
+        encodeMethod: 'SHA1'
       }, {
         value: 2,
-        label: 'MD2'
+        label: 'SHA256',
+        encodeMethod: 'SHA256'
       }, {
         value: 3,
-        label: 'MD5'
+        label: 'MD2',
+        encodeMethod: 'MD2'
+      }, {
+        value: 4,
+        label: 'MD5',
+        encodeMethod: 'MD5'
       }],
       tableName: ['', ''],
       operationTable: [{
-        'operationName': '查看表信息',
-        'table': '',
-        'operate': '执行'
+        id: 0,
+        title: '查看表信息',
+        tableName: ''
       }, {
-        'operationName': '查看数据',
-        'table': '',
-        'operate': '执行'
+        id: 1,
+        title: '查看数据',
+        tableName: ''
       }],
       dataTable: [{
         id: 0,
@@ -115,8 +140,11 @@ export default {
         columnName: 'column2',
         propName: 'prop2'
       }],
-      displayTableTitle: 'table_instance',
-      currentOperationID: -1
+      tableList: [],
+      databaseList: [],
+      currentTableName: '',
+      currentOperationID: -1,
+      schemaOperationID: 0
     }
   },
   methods: {
@@ -126,61 +154,30 @@ export default {
         case 0:
           // 查看表信息
           console.log(this.tableName[operationID])
-          this.$http.get('/relational/view-table-schema/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: 0,
-            encrypted: this.encodeMode
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-                this.dataTableSchema = response.data.result.schema
-                this.displayTableTitle = response.data.result.tableName
-              } else {
-                this.$alert('查看表信息失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('查看表信息失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.getDisplayTableSchema(this, operationID)
           break
         case 1:
           // 查看数据
           console.log(this.tableName[operationID])
-          this.$http.get('/relational/select/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: 0,
-            encrypted: this.encodeMode
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-                this.dataTable = response.data.result
-                this.displayTableTitle = this.tableName[operationID]
-                console.log(this.dataTable)
-              } else {
-                this.$alert('插入数据失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('插入数据失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.encodeMode = ''
+          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.encodeMode = this.encodeList[this.encodeID].encodeMethod
+          this.GLOBAL.getDisplayTable(this)
+          break
       }
     },
     getProp (index) {
       console.log('porp' + String(index))
       return 'prop' + String(index)
-    },
-    onClickDecode () {
-      this.encodeMode = this.encodeList[this.encodeID].label
+    }
+  },
+  watch: {
+    encodeID: function (val) {
+      this.encodeMode = this.encodeList[val].encodeMethod
     }
   },
   created () {
-    // this.createDatabase()
+    this.GLOBAL.getDatabaseList(this, true)
   }
 }
 </script>

@@ -106,11 +106,7 @@ export default {
       }).then(response => {
         console.log(response)
         if (response.status === 200 && response.data.success) {
-          _this.$notify({
-            // title: '保存成功',
-            message: '保存权限更改成功',
-            offset: 200
-          })
+          _this.$alert('保存成功')
           _this.isSavingChanges = false
         } else {
           _this.$alert('保存权限更改失败，请稍后再试！')

@@ -20,7 +20,7 @@
                     default-expand-all
           >
             <el-table-column
-              property="operationName"
+              property="title"
               label="操作名称"
               align="left"
               width="100"
@@ -30,7 +30,20 @@
               label="表名"
               align="center">
               <template slot-scope="scope">
-                <el-input v-model="tableName[scope.$index]" type="text" placeholder="输入表名"></el-input>
+<!--                <el-input v-model="tableName[scope.$index]" type="text" placeholder="输入表名"></el-input>-->
+                <el-select v-model="scope.row.tableName" placeholder="选择表名" v-if="scope.row.id !== 0">
+                  <el-option
+                    v-for="table in tableList"
+                    :key="table.label"
+                    :label="table.label"
+                    :value="table.value"
+                  ></el-option>
+                </el-select>
+                <el-input
+                  v-else
+                  placeholder="输入表名"
+                  v-model="scope.row.tableName"
+                ></el-input>
               </template>
             </el-table-column>
             <el-table-column
@@ -49,16 +62,34 @@
       <h1>查看测试结果</h1>
       <div>
         <div class="title-reserved" v-if="shouldDisplayTableTitle">
-          <h1>表： {{displayTableTitle}}</h1>
+          <h1>表： {{currentTableName}}</h1>
         </div>
-        <el-table :data="dataTable" v-if="currentOperationID === 5">
-          <el-table-column align="center" row-key="id"
+        <el-table
+          v-if="currentOperationID === 5"
+          :data="dataTable"
+          ref="displayData"
+          stripe
+          row-key="id"
+          default-expand-all
+        >
+          <el-table-column
             v-for="(columnDef, index) in dataTableSchema"
-              :key="index"
-              :label="columnDef.columnName"
-              :prop="columnDef.propName">
+            :prop="columnDef.columnName"
+            :label="columnDef.columnName"
+            :key="index"
+            align="center"
+          >
+
           </el-table-column>
         </el-table>
+<!--        <el-table :data="dataTable" v-if="currentOperationID === 5">-->
+<!--          <el-table-column align="center" row-key="id"-->
+<!--            v-for="(columnDef, index) in dataTableSchema"-->
+<!--              :key="index"-->
+<!--              :label="columnDef.columnName"-->
+<!--              :prop="columnDef.propName">-->
+<!--          </el-table-column>-->
+<!--        </el-table>-->
         <el-table :data="dataTableSchema" v-if="currentOperationID === 1">
           <el-table-column
             prop="columnName"
@@ -86,49 +117,43 @@ export default {
   name: 'IsolateRelationPage',
   data () {
     return {
-      instanceID: 1, // 实例ID，默认为1
+      instanceID: 0, // 实例ID，默认为1
       instanceList: [{
-        value: 1,
+        value: 0,
         label: '实例一'
       }, {
-        value: 2,
+        value: 1,
         label: '实例二'
       }],
+      tableList: [],
       tableName: ['', '', '', '', '', ''], // 分别对应六个操作的输入表名
       operationTable: [{
-        'operationName': '创建表',
-        'table': '',
-        'operate': '执行'
-      }, {
-        'operationName': '查看表信息',
-        'table': '',
-        'operate': '执行'
-      }, {
-        'operationName': '插入数据',
-        'table': '',
-        'operate': '执行'
-      }, {
-        'operationName': '更新数据',
-        'table': '',
-        'operate': '执行'
-      }, {
-        'operationName': '删除数据',
-        'table': '',
-        'operate': '执行'
-      }, {
-        'operationName': '查看数据',
-        'table': '',
-        'operate': '执行'
-      }],
-      dataTable: [{
         id: 0,
-        prop1: 'row1, col1',
-        prop2: 'row1, col2'
+        title: '创建表',
+        tableName: ''
       }, {
         id: 1,
-        prop1: 'row2, col1',
-        prop2: 'row2, col2'
+        title: '查看表信息',
+        tableName: ''
+      }, {
+        id: 2,
+        title: '插入数据',
+        tableName: ''
+      }, {
+        id: 3,
+        title: '更新数据',
+        tableName: ''
+      }, {
+        id: 4,
+        title: '删除数据',
+        tableName: ''
+      }, {
+        id: 5,
+        title: '查看数据',
+        tableName: ''
       }],
+      databaseList: [],
+      dataTable: [],
       dataTableSchema: [{
         id: 0,
         columnName: 'column1',
@@ -138,141 +163,47 @@ export default {
         columnName: 'column2',
         propName: 'prop2'
       }],
-      displayTableTitle: '',
-      currentOperationID: -1
+      currentTableName: '',
+      currentOperationID: -1,
+      currentDatabaseName: '',
+      schemaOperationID: 1,
+      encodeMode: ''
     }
   },
   methods: {
     operate (operationID) {
+      // let _this = this
       this.currentOperationID = operationID
       switch (operationID) {
         case 0:
           // 创建表
           console.log(this.tableName[operationID])
-          this.$http.post('/relational/create-table/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-              } else {
-                this.$alert('创建数据表失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('创建数据表失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.createTable(this)
           break
         case 1:
           // 查看表信息
           console.log(this.tableName[operationID])
-          this.$http.get('/relational/view-table-schema/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID,
-            encrypted: false
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-                this.dataTableSchema = response.data.result.schema
-                this.displayTableTitle = response.data.result.tableName
-              } else {
-                this.$alert('查看表信息失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('查看表信息失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.getDisplayTableSchema(this, operationID)
           break
         case 2:
           // 插入数据
           console.log(this.tableName[operationID])
-          this.$http.post('/relational/insert/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-              } else {
-                this.$alert('插入数据失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('插入数据失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.insert(this)
           break
         case 3:
           // 更新数据
           console.log(this.tableName[operationID])
-          this.$http.post('/relational/update/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-              } else {
-                this.$alert('更新数据失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('更新数据失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.update(this)
           break
         case 4:
           // 删除数据
           console.log(this.tableName[operationID])
-          this.$http.post('/relational/delete/', {
-            databaseName: '',
-            tableName: this.tableName[operationID],
-            username: '',
-            instanceID: this.instanceID
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-              } else {
-                this.$alert('删除数据失败，请稍后再试！')
-              }
-            }, function (response) {
-              this.$alert('删除数据失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.deleteData(this)
           break
         case 5:
           // 查看数据
-          console.log(this.tableName[operationID])
-          this.$http.get('/relational/select/', {
-            params: {
-              databaseName: '',
-              tableName: this.tableName[operationID],
-              username: '',
-              instanceID: this.instanceID
-            }
-          }).then(
-            function (response) {
-              if (response.status === 200 && response.data.success) {
-                console.log(response.data)
-                this.dataTable = response.data.result
-                this.displayTableTitle = this.tableName[operationID]
-                console.log(this.dataTable)
-              } else {
-                this.$alert(`查看数据失败：${response.data.msg}`)
-              }
-            }, function (response) {
-              this.$alert('查看数据失败，请检查网络连接，稍后再试！')
-            }
-          )
+          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.GLOBAL.getDisplayTable(this)
           break
       }
     },
@@ -286,8 +217,16 @@ export default {
       return this.currentOperationID === 1 | this.currentOperationID === 5
     }
   },
+  watch: {
+    instanceID: function (val) {
+      this.GLOBAL.getDatabaseList(this, true)
+      this.operationTable.forEach((e) => {
+        e.tableName = ''
+      })
+    }
+  },
   created () {
-    // this.createDatabase()
+    this.GLOBAL.getDatabaseList(this, true)
   }
 }
 </script>

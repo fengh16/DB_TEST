@@ -49,7 +49,7 @@
             <el-col :span="12">
               <el-button type="primary" plain @click="doAuth" v-if="!authed">身份认证</el-button>
               <el-button type="primary" plain @click="cancelAuth" v-else>取消认证</el-button>
-              <el-button type="primary" plain @click="doSetPassword">设置密码</el-button>
+              <el-button type="primary" plain @click="doSetPassword" v-if="this.GLOBAL.username==='root'">设置密码</el-button>
               <el-button type="primary" plain @click="showLogs">查看日志</el-button>
             </el-col>
           </el-row>

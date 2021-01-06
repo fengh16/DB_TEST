@@ -196,6 +196,35 @@ def have_table_privilege(username, instance_id, db_name, access_type):
         and db_privileges[db_name][f'{cn_name}表权限'][username]
 
 
+def format_schema(raw_schema):
+    if len(raw_schema) == 0:
+        return []
+    key_map = {
+        'PRI': 'primary key',
+        'MUL': 'foreign key',
+        '': ''
+    }
+    schema_len = len(raw_schema['Field'])
+    schema = [{
+        'name': raw_schema['Field'][i],
+        'type': raw_schema['Type'][i],
+        'constraint': key_map[raw_schema['Key'][i]]
+        }
+        for i in range(schema_len)
+    ]
+    return schema
+
+
+def format_table(instance_id, db_name, table_name, rows):
+    schema = db[instance_id][db_name][table_name]['schema']
+    
+    table_rows = [{
+        schema[c]['name']: rows[r][c] for c in range(len(rows[0]))
+    } for r in range(len(rows))]
+
+    return table_rows
+
+
 # platform
 @app.route('/change-user/', methods=['POST'])
 @cross_origin()
@@ -356,7 +385,7 @@ def create_database(dbtype):
         create_success = operation.interface.create_db(username, db_name, instance_id)
         if create_success:
             db = operation.get_dbs_content('root')
-            # global_user_privilege, db_privileges = operation.get_users_privilege()
+            global_user_privilege, db_privileges = operation.get_users_privilege()
         response = {
             'success': create_success,
             'result': '创建成功' if create_success else '创建失败',
@@ -425,9 +454,11 @@ def create_table(dbtype):
         and db_privileges[db_name]['创建表权限'][username]
     if request_success:
         create_success = table_name not in db[instance_id][db_name]['table_list']
+        create_success = create_success and operation.interface.create_table(username, db_name, table_name, instance_id)
         if create_success:
-            db[instance_id][db_name]['table_list'].append(table_name)
-            db[instance_id][db_name][table_name] = {}
+            # db[instance_id][db_name]['table_list'].append(table_name)
+            # db[instance_id][db_name][table_name] = {}
+            db = operation.get_dbs_content('root')
         response = {
             'success': create_success,
             'result': '创建成功' if create_success else '已经存在'
@@ -448,7 +479,7 @@ def view_table_schema(dbtype):
     instance_id = int(request.args.get('instanceId', '0'))
     db_name = request.args.get('databaseName', '')
     table_name = request.args.get('tableName', '')
-    encrypt_method = request.args.get('encryptMethod', '')
+    encrypt_method = request.args.get('encrypted', '')
     if db_name not in db[instance_id]:
         response = {
             'success': False,
@@ -465,14 +496,18 @@ def view_table_schema(dbtype):
         print(username, instance_id, db_name)
         request_success = have_table_privilege(username, instance_id, db_name, 'R')
         if request_success:
-            schema = db[instance_id][db_name][table_name]['schema']
+            if encrypt_method == '':
+                schema = db[instance_id][db_name][table_name]['schema']
+            else:
+                schema = operation.interface.get_table_schema(username, db_name, table_name, instance_id, encrypt_method)
+                schema = format_schema(schema)
             response = {
                 'success': True,
                 'result': {
                     'tableName': table_name,
                     'schema': [{
                         'id': i,
-                        'columnName': column['name'] if encrypt_method == '' else '[enc]' + column['name'],
+                        'columnName': column['name'],
                         'columnType': column['type'],
                         'columnConstraint': column['constraint']
                     } for i, column in enumerate(schema)]
@@ -498,6 +533,9 @@ def insert(dbtype):
     authed = have_table_privilege(username, instance_id, db_name, 'U')
     if authed:
         insert_success = table_name in db[instance_id][db_name]['table_list']
+        insert_success = insert_success & operation.interface.insert_data(username, db_name, table_name, instance_id)
+        if insert_success:
+            db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
         response = {
             'success': insert_success,
             'result': '插入成功' if insert_success else '不存在该表'
@@ -520,6 +558,9 @@ def update(dbtype):
     authed = have_table_privilege(username, instance_id, db_name, 'U')
     if authed:
         update_success = table_name in db[instance_id][db_name]['table_list']
+        update_success = update_success and operation.interface.update_data(username, db_name, table_name, instance_id)
+        if update_success:
+            db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
         response = {
             'success': update_success,
             'result': '更新成功' if update_success else '不存在该表'
@@ -544,6 +585,9 @@ def delete(dbtype):
     authed = have_table_privilege(username, instance_id, db_name, 'U')
     if authed:
         delete_success = table_name in db[instance_id][db_name]['table_list']
+        delete_success = delete_success and operation.interface.delete_data(username, db_name, table_name, instance_id)
+        if delete_success:
+            db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
         response = {
             'success': delete_success,
             'result': '删除成功' if delete_success else '不存在该表'
@@ -574,7 +618,7 @@ def select(dbtype):
     instance_id = int(request.args.get('instanceId', '0'))
     db_name = request.args.get('databaseName', '')
     table_name = request.args.get('tableName', '')
-    encrypt_method = request.args.get('encryptMethod', '')
+    encrypt_method = request.args.get('encrypted', '')
     if db_name not in db[instance_id]:
         response = {
             'success': False,
@@ -591,18 +635,25 @@ def select(dbtype):
     else:
         authed = have_table_privilege(username, instance_id, db_name, 'R')
         if authed:
-            rows = db[instance_id][db_name][table_name]['rows']
-            response = {
-                'success': True,
-                'result': []
-            }
-            for i, row in enumerate(rows):
-                if encrypt_method == '':
-                    new_row = {column_name: value for (column_name, value) in row.items()}
-                else:
-                    new_row = {column_name: '[enc]' + value for (column_name, value) in row.items()}
-                new_row['id'] = i
-                response['result'].append(new_row)
+            if encrypt_method == '':
+                rows = db[instance_id][db_name][table_name]['rows']
+                response = {
+                    'success': True,
+                    'result': rows
+                }
+            else:
+                rows = operation.interface.get_table_data(username, db_name, table_name, instance_id, encrypt_method)
+                response = {
+                    'success': True,
+                    'result': format_table(instance_id, db_name, table_name, rows)
+                }
+            # for i, row in enumerate(rows):
+            #     if encrypt_method == '':
+            #         new_row = {column_name: value for (column_name, value) in row.items()}
+            #     else:
+            #         new_row = {column_name: '[enc]' + value for (column_name, value) in row.items()}
+            #     new_row['id'] = i
+            #     response['result'].append(new_row)
         else:
             response = {
                 'success': False,
@@ -640,6 +691,7 @@ def select(dbtype):
     }
     return make_response(response, 200)
 
+
 # 15. 查看嵌入后数据信息
 @app.route('/<string:dbtype>/select-embedding/', methods=['GET'])
 @cross_origin()
@@ -654,18 +706,13 @@ def select_embedding(dbtype):
     if request_success:
         select_success = table_name in db[instance_id][db_name]['table_list']
         if select_success:
-            rows = db[instance_id][db_name][table_name]['rows']
+            rows = operation.interface.embed_table_data(username, db_name, table_name, embedding, instance_id, encrypt_method)
+            table_rows = format_table(instance_id, db_name, table_name, rows)
             response = {
                 'success': True,
-                'result': []
+                'result': table_rows
             }
-            for i, row in enumerate(rows):
-                if encrypt_method == '':
-                    new_row = {column_name: f'[{embedding}]' + str(value) for (column_name, value) in row.items()}
-                else:
-                    new_row = {column_name: '[enc]' + f'[{embedding}]' + str(value) for (column_name, value) in row.items()}
-                new_row['id'] = i
-                response['result'].append(new_row)
+            print(response)
         else:
             response = {
                 'success': False,
@@ -850,7 +897,7 @@ def select_log(dbtype):
     return make_response(response, 200)
 
 
-@app.route('/<string:dbtype>/delte-file/', methods=['POST'])
+@app.route('/<string:dbtype>/delete-file/', methods=['POST'])
 @cross_origin()
 def delete_file(dbtype):
     username = request.json['username']

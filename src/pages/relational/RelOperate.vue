@@ -35,7 +35,7 @@
             align="center"
           >
             <template slot-scope="scope">
-              <el-select v-model="scope.row.tableName" placeholder="选择表名">
+              <el-select v-model="scope.row.tableName" placeholder="选择表名" v-if="scope.row.id !== 0">
                 <el-option
                   v-for="table in tableList"
                   :key="table.label"
@@ -43,11 +43,12 @@
                   :value="table.value"
                 ></el-option>
               </el-select>
-<!--              <el-input-->
-<!--                placeholder="输入表名"-->
-<!--                v-model="scope.row.tableName"-->
-<!--                clearable>-->
-<!--              </el-input>-->
+              <el-input
+                v-else
+                placeholder="输入表名"
+                v-model="scope.row.tableName"
+                clearable>
+              </el-input>
             </template>
           </el-table-column>
 <!--          <el-table-column-->
@@ -209,7 +210,10 @@ export default {
       newDatabaseDialogShow: false,
       dropDatabaseDialogShow: false,
       embeddingString: '',
-      embeddingDialogShow: false
+      embeddingDialogShow: false,
+      schemaOperationID: 1,
+      instanceID: 0,
+      encodeMode: ''
     }
   },
   computed: {
@@ -226,7 +230,7 @@ export default {
       this.$http.get('/relational/list-database/', {
         params: {
           username: this.GLOBAL.username,
-          instanceId: 0
+          instanceId: this.instanceID
         }
       }).then(
         function (response) {
@@ -255,7 +259,7 @@ export default {
       this.$http.get('/relational/list-table/', {
         params: {
           username: this.GLOBAL.username,
-          instanceId: 0,
+          instanceId: this.instanceID,
           databaseName: this.currentDatabaseName
         }
       }).then(
@@ -283,20 +287,20 @@ export default {
           username: this.GLOBAL.username,
           databaseName: this.currentDatabaseName,
           tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
+          instanceId: this.instanceID,
+          encrypted: this.encodeMode
         }
       }).then(
         function (response) {
           if (response.status === 200 && response.data.success) {
             _this.currentTableName = response.data.result.tableName
             _this.dataTableSchema = response.data.result.schema
-            if (operationId === 1) {
+            if (operationId === _this.schemaOperationID) {
               _this.currentFocusOperation = operationId
               _this.loading = false
             }
           } else {
-            if (operationId === 1) {
+            if (operationId === _this.schemaOperationID) {
               _this.$alert(`获取表信息失败：${response.data.msg}`)
               _this.loading = false
             }
@@ -313,8 +317,8 @@ export default {
           username: this.GLOBAL.username,
           databaseName: this.currentDatabaseName,
           tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
+          instanceId: this.instanceID,
+          encrypted: this.encodeMode
         }
       }).then(
         function (response) {
@@ -343,7 +347,7 @@ export default {
       this.$http.post('/relational/create-database/', {
         databaseName: newDatabaseName,
         username: this.GLOBAL.username,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         console.log(response)
         if (response.status === 200 && response.data.success) {
@@ -370,7 +374,7 @@ export default {
           username: this.GLOBAL.username,
           databaseName: this.currentDatabaseName,
           tableName: this.operationTable[6].tableName,
-          instanceId: 0,
+          instanceId: this.instanceID,
           encrypted: '',
           embedding: this.embeddingString
         }
@@ -398,7 +402,7 @@ export default {
       this.$http.post('/relational/drop-database/', {
         databaseName: this.currentDatabaseName,
         username: this.GLOBAL.username,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         console.log(response)
         _this.dropDatabaseDialogShow = false
@@ -426,31 +430,20 @@ export default {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: this.operationTable[0].tableName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `创建表 ${_this.operationTable[0].tableName} 成功`,
-            offset: 200
-          })
+          _this.$alert(`创建表 ${_this.operationTable[0].tableName} 成功`)
+          _this.getTableList()
           // _this.operationTable[0].tableName = ''
         } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `创建表 ${_this.operationTable[0].tableName} 失败：${response.data.result}`,
-            offset: 200
-          })
+          _this.$alert(`创建表 ${_this.operationTable[0].tableName} 失败：${response.data.result}`)
         }
       }, response => {
         this.loading = false
-        _this.$notify({
-          // title: '保存成功',
-          message: `创建表 ${_this.operationTable[0].tableName} 失败：网络错误`,
-          offset: 200
-        })
+        _this.$alert(`创建表 ${_this.operationTable[0].tableName} 失败：网络错误`)
       })
     },
     insert () {
@@ -460,29 +453,19 @@ export default {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: tableName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `向表 ${tableName} 插入数据成功`,
-            offset: 200
-          })
+          _this.$alert(`向表 ${tableName} 插入数据成功`)
           // _this.operationTable[0].tableName = ''
         } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `向表 ${tableName} 插入数据失败：${response.data.result}`,
-            offset: 200
-          })
+          _this.$alert(`向表 ${tableName} 插入数据失败：${response.data.result}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `向表 ${tableName} 插入数据失败：网络错误`
-        })
+        _this.$alert(`向表 ${tableName} 插入数据失败：网络错误`)
       })
     },
     update () {
@@ -492,29 +475,19 @@ export default {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: tableName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `更新表 ${tableName} 数据成功`,
-            offset: 200
-          })
+          _this.$alert(`更新表 ${tableName} 数据成功`)
           // _this.operationTable[0].tableName = ''
         } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `更新表 ${tableName} 数据失败：${response.data.result}`,
-            offset: 200
-          })
+          _this.$alert(`更新表 ${tableName} 数据失败：${response.data.result}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `更新表 ${tableName} 数据失败：网络错误`
-        })
+        _this.$alert(`更新表 ${tableName} 数据失败：网络错误`)
       })
     },
     delete () {
@@ -524,29 +497,19 @@ export default {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: tableName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 数据成功`,
-            offset: 200
-          })
+          _this.$alert(`删除表 ${tableName} 数据成功`)
           // _this.operationTable[0].tableName = ''
         } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 数据失败：${response.data.result}`,
-            offset: 200
-          })
+          _this.$alert(`删除表 ${tableName} 数据失败：${response.data.result}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `删除表 ${tableName} 数据失败：网络错误`
-        })
+        _this.$alert(`删除表 ${tableName} 数据失败：网络错误`)
       })
     },
     onExecute (operationId) {
@@ -598,6 +561,9 @@ export default {
   watch: {
     currentDatabaseName: function (val) {
       this.getTableList()
+      this.operationTable.forEach((e) => {
+        e.tableName = ''
+      })
     }
   },
   created () {

@@ -216,6 +216,117 @@ function getDatabaseList (_this, cascade) {
     })
 }
 
+function getFile (_this) {
+  // requires:
+  // _this.operationTable
+  // _this.currentOperationID
+  // _this.filenameString
+  // _this.fileContent
+  // _this.loading
+  let filename = _this.operationTable[_this.currentOperationID].filepath
+  _this.$http.get('/relational/select-file/', {
+    params: {
+      username: _this.GLOBAL.username,
+      filename: filename
+    }
+  }).then(
+    function (response) {
+      console.log(response)
+      if (response.status === 200 && response.data.success) {
+        console.log(response.data)
+        _this.filenameString = filename
+        _this.fileString = response.data.result
+        _this.fileContent = response.data.result
+        _this.loading = false
+      } else {
+        _this.$alert(`查看文件失败：${response.data.msg}`)
+        _this.loading = false
+      }
+    }, function (response) {
+      _this.$alert('查看文件失败，请检查网络连接，稍后再试！')
+      _this.loading = false
+    })
+}
+
+function deleteFile (_this) {
+  // requires:
+  // _this.operationTable
+  // _this.currentOperationID
+  let filename = _this.operationTable[_this.currentOperationID].filepath
+  _this.$http.post('/relational/delete-file/', {
+    username: _this.GLOBAL.username,
+    filename: filename
+  }).then(response => {
+    _this.loading = false
+    if (response.status === 200 && response.data.success) {
+      console.log(response.data)
+      _this.$alert(`删除文件成功`)
+    } else {
+      _this.$alert(`删除文件失败：${response.data.msg}`)
+    }
+  }, response => {
+    _this.loading = false
+    _this.$alert(`删除文件失败：网络错误`)
+  })
+}
+
+function importDataShell (_this) {
+  // requires:
+  // _this.operationTable
+  // _this.currentOperationID
+  // _this.currentDatabaseName
+  // loading
+  let tableName = _this.operationTable[_this.currentOperationID].tableName
+  let filename = _this.operationTable[_this.currentOperationID].filepath
+  _this.$http.post('/relational/import-data/', {
+    username: _this.GLOBAL.username,
+    databaseName: _this.currentDatabaseName,
+    tableName: tableName,
+    filename: filename,
+    instanceId: 0,
+    method: 'shell'
+  }).then(response => {
+    _this.loading = false
+    if (response.status === 200 && response.data.success) {
+      console.log(response.data)
+      _this.$alert(`导入表 ${tableName} 成功`)
+    } else {
+      _this.$alert(`导入表 ${tableName} 失败：${response.data.msg}`)
+    }
+  }, response => {
+    _this.loading = false
+    _this.$alert(`导入表 ${tableName} 失败：网络错误`)
+  })
+}
+
+function exportDataShell (_this) {
+  // requires:
+  // _this.operationTable
+  // _this.currentOperationID
+  // _this.currentDatabaseName
+  let tableName = _this.operationTable[_this.currentOperationID].tableName
+  let filepath = _this.operationTable[_this.currentOperationID].filepath
+  _this.$http.post('/relational/export-data/', {
+    username: _this.GLOBAL.username,
+    databaseName: _this.currentDatabaseName,
+    tableName: tableName,
+    filename: filepath,
+    instanceId: 0,
+    method: 'shell'
+  }).then(response => {
+    _this.loading = false
+    if (response.status === 200 && response.data.success) {
+      console.log(response.data)
+      _this.$alert(`导出表 ${tableName} 成功`)
+    } else {
+      _this.$alert(`导出表 ${tableName} 失败：${response.data.msg}`)
+    }
+  }, response => {
+    _this.loading = false
+    _this.$alert(`导出表 ${tableName} 失败：网络错误`)
+  })
+}
+
 export default {
   systemName,
   username,
@@ -230,5 +341,9 @@ export default {
   getDisplayTable,
   getTableList,
   getDatabaseList,
-  deleteData
+  deleteData,
+  getFile,
+  deleteFile,
+  importDataShell,
+  exportDataShell
 }

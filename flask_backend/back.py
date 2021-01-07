@@ -155,7 +155,7 @@ db = {
 }
 
 existing_files = {
-    'backup_1.sql'
+    'nation.txt'
 }
 
 def prepare():
@@ -798,88 +798,116 @@ def drop_database(dbtype):
 @app.route('/<string:dbtype>/import-data/', methods=['POST'])
 @cross_origin()
 def import_data(dbtype):
-  if dbtype == 'relational':
-    username = request.json['username']
-    instance_id = int(request.json['instanceId'])
-    db_name = request.json['databaseName']
-    table_name = request.json['tableName']
-    filename = request.json['filename']
-    import_method = request.json['method']
-    authed = have_table_privilege(username, instance_id, db_name, 'U')
-    if authed:
+    if dbtype == 'relational':
+        username = request.json['username']
+        instance_id = int(request.json['instanceId'])
+        db_name = request.json['databaseName']
+        table_name = request.json['tableName']
+        filename = request.json['filename']
+        import_method = request.json['method']
+        authed = have_table_privilege(username, instance_id, db_name, 'U')
+        if authed:
+            import_success = filename in existing_files and operation.interface.import_data(username, db_name, table_name, instance_id, import_method == 'shell')
+            if import_success:
+                response = {
+                    'success': True,
+                    'result': '',
+                    'msg': '导入成功'
+                }
+            elif filename not in existing_files:
+                response = {
+                    'success': False,
+                    'result': '',
+                    'msg': '文件不存在'
+                }
+            else:
+                response = {
+                    'success': False,
+                    'result': '',
+                    'msg': '格式错误'
+                }
+        else:
+            response = {
+                'success': False,
+                'result': '导入失败',
+                'msg': '没有权限'
+            }
+        return make_response(response, 200)
+
+    elif dbtype=='graph':
+        username = request.json['username']
+        instance_id = int(request.json['instanceId'])
+        filename = request.json['filename']
         response = {
             'success': True,
             'result': '导入成功'
         }
-    else:
-        response = {
-            'success': False,
-            'result': '导入失败',
-            'msg': '没有权限'
-        }
-    return make_response(response, 200)
-
-  elif dbtype=='graph':
-    username = request.json['username']
-    instance_id = int(request.json['instanceId'])
-    filename = request.json['filename']
-    response = {
-      'success': True,
-      'result': '导入成功'
-    }
-    return make_response(response, 200)
+        return make_response(response, 200)
 
 
 @app.route('/<string:dbtype>/export-data/', methods=['POST'])
 @cross_origin()
 def export_data(dbtype):
-  if dbtype == 'relational':
-    username = request.json['username']
-    instance_id = int(request.json['instanceId'])
-    db_name = request.json['databaseName']
-    table_name = request.json['tableName']
-    filename = request.json['filename']
-    import_method = request.json['method']
-    authed = have_table_privilege(username, instance_id, db_name, 'R')
-    if authed:
-        existing_files.add(filename)
+    if dbtype == 'relational':
+        username = request.json['username']
+        instance_id = int(request.json['instanceId'])
+        db_name = request.json['databaseName']
+        table_name = request.json['tableName']
+        filename = request.json['filename']
+        export_method = request.json['method']
+        authed = have_table_privilege(username, instance_id, db_name, 'R')
+        if authed:
+            export_success = operation.interface.export_data(username, db_name, table_name, filename, instance_id, export_method == 'shell')
+            if export_success:
+                existing_files.add(filename)
+                response = {
+                    'success': True,
+                    'result': '',
+                    'msg': '导出成功'
+                }
+            else:
+                response = {
+                    'success': False,
+                    'result': '',
+                    'msg': '格式错误'
+                }
+        else:
+            response = {
+                'success': False,
+                'result': '导出失败',
+                'msg': '没有权限'
+            }
+        return make_response(response, 200)
+
+    elif dbtype=='graph':
+        username = request.json['username']
+        instance_id = int(request.json['instanceId'])
+        filename = request.json['filename']
         response = {
             'success': True,
             'result': '导出成功'
         }
-    else:
-        response = {
-            'success': False,
-            'result': '导出失败',
-            'msg': '没有权限'
-        }
-    return make_response(response, 200)
-
-  elif dbtype=='graph':
-    username = request.json['username']
-    instance_id = int(request.json['instanceId'])
-    filename = request.json['filename']
-    response = {
-      'success': True,
-      'result': '导出成功'
-    }
-    return make_response(response, 200)
+        return make_response(response, 200)
 
 @app.route('/<string:dbtype>/select-file/', methods=['GET'])
 @cross_origin()
 def select_file(dbtype):
     username = request.args.get('username', '')
     filename = request.args.get('filename', '')
-    response = {
-        'success': True,
-        'result': [
-            'create table car (',
-            '  car_id   integer primary key,',
-            '  car_name varchar(32),',
-            ');',
-            'insert into car values (0, \'Ford 2009\');'
-        ]
-    }
+    request_success = filename in existing_files
+    if request_success:
+        content = operation.interface.file_content(username, filename)
+        response = {
+            'success': True,
+            'result': content,
+            'msg': ''
+        }
+    else:
+        response = {
+            'success': False,
+            'result': '',
+            'msg': '文件不存在'
+        }
     return make_response(response, 200)
 
 

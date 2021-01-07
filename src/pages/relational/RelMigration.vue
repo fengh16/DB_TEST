@@ -31,15 +31,32 @@
           ></el-table-column>
           <el-table-column
             prop="tableName"
-            label="表名/文件名"
+            label="表名"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-select v-model="scope.row.tableName" placeholder="选择表名" v-if="scope.row.needTable">
+                <el-option
+                  v-for="table in tableList"
+                  :key="table.label"
+                  :label="table.label"
+                  :value="table.value"
+                ></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="filepath"
+            label="文件名"
             align="center"
           >
             <template slot-scope="scope">
               <el-input
-                placeholder="输入表名"
-                v-model="scope.row.tableName"
-                clearable>
-              </el-input>
+                v-if="scope.row.needFilepath"
+                placeholder="输入文件名"
+                v-model="scope.row.filepath"
+                clearable
+              ></el-input>
             </template>
           </el-table-column>
           <el-table-column
@@ -143,18 +160,22 @@
           >
           </el-table-column>
         </el-table>
-        <el-input type="textarea"
+        <div class="title-reserved" v-if="shouldDisplayFileData">
+          <h1>文件： {{filenameString}}</h1>
+        </div>
+        <el-input v-if="shouldDisplayFileData"
+                  type="textarea"
                   :rows="20"
                   placeholder=""
                   v-model="fileContent"
-                  readonly="true"
-                  autosize="false"
+                  :readonly="true"
+                  :autosize="false"
                   resize="none">
         </el-input>
       </div>
-      <div class="file-text" v-if="shouldDisplayFileData">
-        <h>{{fileString}}</h>
-      </div>
+<!--      <div class="file-text" v-if="shouldDisplayFileData">-->
+<!--        <h2>{{fileString}}</h2>-->
+<!--      </div>-->
     </el-col>
   </el-row>
 </template>
@@ -165,59 +186,65 @@ export default {
   data () {
     return {
       databaseList: [],
+      tableList: [],
       currentDatabaseName: '',
       operationTable: [{
         id: 0,
         title: '查询语句导入数据',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: true,
+        filepath: '',
+        needFilepath: true
       }, {
         id: 1,
         title: 'import命令导入数据',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: true,
+        filepath: '',
+        needFilepath: true
       }, {
         id: 2,
         title: '查询语句导出数据',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: true,
+        filepath: '',
+        needFilepath: true
       }, {
         id: 3,
         title: 'dump命令导出数据',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: true,
+        filepath: '',
+        needFilepath: true
       }, {
         id: 4,
         title: '查看表数据',
         tableName: '',
-        needParam: false
+        needTable: true,
+        filepath: '',
+        needFilepath: false
       }, {
         id: 5,
         title: '查看文件',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: false,
+        filepath: '',
+        needFilepath: true
       }, {
         id: 6,
         title: '删除文件',
         tableName: '',
-        needParam: true,
-        param: '',
-        paramHint: '输入文件路径'
+        needTable: false,
+        filepath: '',
+        needFilepath: true
       }],
       dataTable: [],
       dataTableSchema: [],
       currentTableName: '',
-      currentFocusOperation: 0,
+      currentOperationID: 0,
+      schemaOperationID: -1,
+      instanceID: 0,
+      encodeMode: '',
       loading: false,
       filenameDialogShow_0: false, // 每个对话框的显示由单独的变量控制
       filenameDialogShow_1: false,
@@ -226,114 +253,22 @@ export default {
       filenameDialogShow_5: false,
       filenameDialogShow_6: false,
       filenameString: '',
-      fileString: '',
       method: '',
-      fileContent: 'asdddddddddddddddddd\nddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+      fileContent: ''
     }
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 4
+      return this.currentOperationID === 4
     },
     shouldDisplayDataTable () {
-      return this.currentFocusOperation === 4
+      return this.currentOperationID === 4
     },
     shouldDisplayFileData  () {
-      return this.currentFocusOperation === 5
+      return this.currentOperationID === 5
     }
   },
   methods: {
-    getDatabaseList () {
-      let _this = this
-      this.$http.get('/relational/list-database/', {
-        params: {
-          username: this.GLOBAL.username,
-          instanceId: 0
-        }
-      }).then(
-        function (response) {
-          if (response.status === 200 && response.data.success) {
-            console.log(response.data)
-            _this.databaseList = []
-            response.data.result.forEach(e => {
-              _this.databaseList.push({
-                value: e,
-                label: e
-              })
-            })
-            if (response.data.result.length > 0) {
-              _this.currentDatabaseName = _this.databaseList[0].value
-            }
-          } else {
-            _this.$alert('获取数据库列表失败：没有权限')
-          }
-        }, function (response) {
-          _this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
-        })
-    },
-    getDisplayTableSchema (operationId) {
-      let _this = this
-      this.$http.get('/relational/view-table-schema/', {
-        params: {
-          username: this.GLOBAL.username,
-          databaseName: this.currentDatabaseName,
-          tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
-        }
-      }).then(
-        function (response) {
-          if (response.status === 200 && response.data.success) {
-            _this.currentTableName = response.data.result.tableName
-            _this.dataTableSchema = response.data.result.schema
-            if (operationId === -1) {
-              _this.currentFocusOperation = operationId
-              _this.loading = false
-            }
-          } else {
-            if (operationId === 4) { // 查看数据功能出现问题时，显示表信息这里的提示不再重复显示
-              return
-            }
-            _this.$alert('获取表信息失败：没有权限')
-            _this.loading = false
-          }
-        }, response => {
-          if (operationId === 4) {
-            return
-          }
-          _this.$alert('获取表信息失败：网络错误')
-          _this.loading = false
-        })
-    },
-    getDisplayTable (operationId) {
-      let _this = this
-      this.$http.get('/relational/select/', {
-        params: {
-          username: this.GLOBAL.username,
-          databaseName: this.currentDatabaseName,
-          tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
-        }
-      }).then(
-        function (response) {
-          console.log(response)
-          if (response.status === 200 && response.data.success) {
-            console.log(response.data)
-            _this.dataTable = response.data.result
-            if (operationId) {
-              _this.currentFocusOperation = operationId
-              _this.loading = false
-            }
-          } else {
-            _this.$alert('查看数据失败：没有权限')
-            _this.loading = false
-          }
-        }, function (response) {
-          _this.$alert('查看数据失败，请检查网络连接，稍后再试！')
-          _this.loading = false
-        })
-    },
     importDataSql () {
       let _this = this
       let tableName = this.operationTable[0].tableName
@@ -349,208 +284,95 @@ export default {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            message: `导入表 ${tableName} 成功`,
-            offset: 200
-          })
+          _this.$alert(`导入表 ${tableName} 成功`)
         } else {
-          _this.$notify({
-            message: `导入表 ${tableName} 失败：${response.data.msg}`,
-            offset: 200
-          })
+          _this.$alert(`导入表 ${tableName} 失败：${response.data.msg}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `导入表 ${tableName} 失败：网络错误`
-        })
-      })
-    },
-    importDataShell () {
-      let _this = this
-      let tableName = this.operationTable[1].tableName
-      this.filenameDialogShow_1 = false
-      this.$http.post('/relational/import-data/', {
-        username: this.GLOBAL.username,
-        databaseName: this.currentDatabaseName,
-        tableName: tableName,
-        filename: this.filenameString,
-        instanceId: 0,
-        method: 'shell'
-      }).then(response => {
-        _this.loading = false
-        if (response.status === 200 && response.data.success) {
-          console.log(response.data)
-          _this.$notify({
-            message: `导入表 ${tableName} 成功`,
-            offset: 200
-          })
-        } else {
-          _this.$notify({
-            message: `导入表 ${tableName} 失败：${response.data.msg}`,
-            offset: 200
-          })
-        }
-      }, response => {
-        _this.loading = false
-        _this.$notify({
-          message: `导入表 ${tableName} 失败：网络错误`
-        })
+        _this.$alert(`导入表 ${tableName} 失败：网络错误`)
       })
     },
     exportDataSql () {
       let _this = this
-      let tableName = this.operationTable[2].tableName
+      let tableName = this.operationTable[this.currentOperationID].tableName
+      let filepath = this.operationTable[this.currentOperationID].filepath
       this.filenameDialogShow_2 = false
       this.$http.post('/relational/export-data/', {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: tableName,
-        filename: this.filenameString,
+        filename: filepath,
         instanceId: 0,
         method: 'sql'
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            message: `导出表 ${tableName} 成功`,
-            offset: 200
-          })
+          _this.$alert(`导出表 ${tableName} 成功`)
         } else {
-          _this.$notify({
-            message: `导出表 ${tableName} 失败：${response.data.msg}`,
-            offset: 200
-          })
+          _this.$alert(`导出表 ${tableName} 失败：${response.data.msg}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `导出表 ${tableName} 失败：网络错误`
-        })
+        _this.$alert(`导出表 ${tableName} 失败：网络错误`)
       })
     },
-    exportDataShell () {
-      let _this = this
-      let tableName = this.operationTable[3].tableName
-      this.filenameDialogShow_3 = false
-      this.$http.post('/relational/export-data/', {
-        username: this.GLOBAL.username,
-        databaseName: this.currentDatabaseName,
-        tableName: tableName,
-        filename: this.filenameString,
-        instanceId: 0,
-        method: 'shell'
-      }).then(response => {
-        _this.loading = false
-        if (response.status === 200 && response.data.success) {
-          console.log(response.data)
-          _this.$notify({
-            message: `导出表 ${tableName} 成功`,
-            offset: 200
-          })
-        } else {
-          _this.$notify({
-            message: `导出表 ${tableName} 失败：${response.data.msg}`,
-            offset: 200
-          })
-        }
-      }, response => {
-        _this.loading = false
-        _this.$notify({
-          message: `导出表 ${tableName} 失败：网络错误`
-        })
-      })
-    },
-    getFile () {
-      let _this = this
-      this.filenameDialogShow_5 = false
-      this.$http.get('/relational/select-file/', {
-        params: {
-          username: this.GLOBAL.username,
-          filename: this.filenameString
-        }
-      }).then(
-        function (response) {
-          console.log(response)
-          if (response.status === 200 && response.data.success) {
-            console.log(response.data)
-            _this.fileString = response.data.result
-            _this.loading = false
-          } else {
-            _this.$alert('查看文件失败：没有权限')
-            _this.loading = false
-          }
-        }, function (response) {
-          _this.$alert('查看文件失败，请检查网络连接，稍后再试！')
-          _this.loading = false
-        })
-    },
-    deleteFile () {
-      let _this = this
-      this.filenameDialogShow_6 = false
-      this.$http.post('/relational/delte-file/', {
-        username: this.GLOBAL.username,
-        filename: this.filenameString
-      }).then(response => {
-        _this.loading = false
-        if (response.status === 200 && response.data.success) {
-          console.log(response.data)
-          _this.$notify({
-            message: ` 删除文件成功`,
-            offset: 200
-          })
-        } else {
-          _this.$notify({
-            message: `删除文件失败：${response.data.msg}`,
-            offset: 200
-          })
-        }
-      }, response => {
-        _this.loading = false
-        _this.$notify({
-          message: `删除文件失败：网络错误`
-        })
-      })
-    },
-    onExecute (operationId) {
-      console.log(operationId)
-      switch (operationId) {
+    onExecute (operationID) {
+      this.currentOperationID = operationID
+      console.log(operationID)
+      switch (operationID) {
         case 0:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_0 = true
+          // import (sql)
+          this.currentOperationID = operationID
           break
         case 1:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_1 = true
+          // import (import)
+          this.currentOperationID = operationID
+          this.GLOBAL.importDataShell(this)
           break
         case 2:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_2 = true
+          // export (sql)
+          this.currentOperationID = operationID
+          // this.filenameDialogShow_2 = true
+          this.exportDataSql()
           break
         case 3:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_3 = true
+          // export (dump)
+          this.currentOperationID = operationID
+          this.GLOBAL.exportDataShell(this)
+          // this.filenameDialogShow_3 = true
           break
         case 4:
-          // select
+          // select data
           this.loading = true
-          this.getDisplayTableSchema(4)
-          this.getDisplayTable(4)
+          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.GLOBAL.getDisplayTable(this)
           break
         case 5:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_5 = true
+          this.currentOperationID = operationID
+          this.GLOBAL.getFile(this)
+          // this.filenameDialogShow_5 = true
           break
         case 6:
-          this.currentFocusOperation = operationId
-          this.filenameDialogShow_6 = true
+          this.currentOperationID = operationID
+          this.GLOBAL.deleteFile(this)
+          // this.filenameDialogShow_6 = true
           break
       }
     }
   },
+  watch: {
+    currentDatabaseName: function (val) {
+      this.GLOBAL.getTableList(this)
+      this.operationTable.forEach((e) => {
+        e.tableName = ''
+        e.filepath = ''
+      })
+    }
+  },
   created () {
-    this.getDatabaseList()
+    this.GLOBAL.getDatabaseList(this, true)
   }
 }
 </script>

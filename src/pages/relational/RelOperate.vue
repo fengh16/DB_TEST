@@ -397,24 +397,7 @@ export default {
       this.newDatabaseDialogShow = true
     },
     onClickDropDatabase () {
-      this.dropDatabaseDialogShow = true
-      let _this = this
-      this.$http.post('/relational/drop-database/', {
-        databaseName: this.currentDatabaseName,
-        username: this.GLOBAL.username,
-        instanceId: this.instanceID
-      }).then(response => {
-        console.log(response)
-        _this.dropDatabaseDialogShow = false
-        if (response.status === 200 && response.data.success) {
-          _this.getDatabaseList()
-          _this.$alert('删除数据库成功！')
-        } else {
-          _this.$alert(`删除数据库失败：${response.data.msg}`)
-        }
-      }, response => {
-        _this.$alert('删除数据库失败：网络错误')
-      })
+      this.Relational.dropDatabase(this)
     },
     onDebug () {
       let tableNames = []

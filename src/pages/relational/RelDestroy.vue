@@ -13,7 +13,8 @@
               :value="item.value">
             </el-option>
           </el-select>
-          <el-button type="primary" plain @click="onClickDeleteDatabase">删除数据库</el-button>
+          <el-button type="primary" plain @click="onClickCreateDatabase">创建数据库</el-button>
+          <el-button type="primary" plain @click="onClickDropDatabase">删除数据库</el-button>
         </div>
         <el-table :data="operationTable"
                   ref="operations"
@@ -34,7 +35,16 @@
             align="center"
           >
             <template slot-scope="scope">
+              <el-select v-model="scope.row.tableName" placeholder="选择表名" v-if="scope.row.id !== 0">
+                <el-option
+                  v-for="table in tableList"
+                  :key="table.label"
+                  :label="table.label"
+                  :value="table.value"
+                ></el-option>
+              </el-select>
               <el-input
+                v-else
                 placeholder="输入表名"
                 v-model="scope.row.tableName"
                 clearable>
@@ -52,18 +62,15 @@
           </el-table-column>
         </el-table>
       </div>
-      <el-dialog
-        title="删除数据库"
-        :visible.sync="deleteDatabaseDialogShow"
-      >
+      <el-dialog title="创建数据库" :visible.sync="newDatabaseDialogShow">
         <el-form>
           <el-form-item label="数据库名">
-            <el-input v-model="deleteDatabaseName" autocomplete="off" placeholder="输入要删除的数据库名称"></el-input>
+            <el-input v-model="newDatabaseName" autocomplete="off" placeholder="输入新数据库名称"></el-input>
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
-          <el-button @click="deleteDatabaseDialogShow=false">取 消</el-button>
-          <el-button type="primary" @click="onDeleteDatabaseSubmit">删 除</el-button>
+          <el-button @click="newDatabaseDialogShow=false">取 消</el-button>
+          <el-button type="primary" @click="onClickNewDatabaseSubmit">创 建</el-button>
         </div>
       </el-dialog>
     </el-col>
@@ -92,7 +99,7 @@
           </el-table-column>
         </el-table>
         <el-table
-          v-if="currentFocusOperation === 0"
+          v-if="currentOperationID === 1"
           :data="dataTableSchema"
           ref="displayDataSchema"
           stripe
@@ -129,247 +136,149 @@ export default {
       currentDatabaseName: '',
       operationTable: [{
         id: 0,
-        title: '查看表信息',
-        tableName: '',
-        needParam: false
-      }, {
+        title: '创建表',
+        tableName: ''
+      },{
         id: 1,
-        title: '删除表中所有数据',
-        tableName: '',
-        needParam: false
+        title: '查看表信息',
+        tableName: ''
       }, {
         id: 2,
-        title: '删除表',
-        tableName: '',
-        needParam: false
+        title: '删除表中所有数据',
+        tableName: ''
       }, {
         id: 3,
+        title: '删除表',
+        tableName: ''
+      }, {
+        id: 4,
         title: '查看数据',
-        tableName: '',
-        needParam: false
+        tableName: ''
       }],
+      tableList: [],
       dataTable: [],
       dataTableSchema: [],
       currentTableName: '',
-      currentFocusOperation: -1,
+      currentOperationID: -1,
       loading: false,
       deleteDatabaseDialogShow: false,
-      deleteDatabaseName: ''
+      deleteDatabaseName: '',
+      schemaOperationID: 0,
+      instanceID: 0,
+      encodeMode: '',
+      newDatabaseDialogShow: false,
+      newDatabaseName: ''
     }
   },
   computed: {
     shouldDisplayTableTitle () {
-      return this.currentFocusOperation === 0 | this.currentFocusOperation === 3
+      return this.currentOperationID === 1 | this.currentOperationID === 4
     },
     shouldDisplayDataTable () {
-      return this.currentFocusOperation === 3
+      return this.currentOperationID === 4
     }
   },
   methods: {
-    getDatabaseList () {
-      let _this = this
-      this.$http.get('/relational/list-database/', {
-        params: {
-          username: this.GLOBAL.username,
-          instanceId: 0
-        }
-      }).then(
-        function (response) {
-          if (response.status === 200 && response.data.success) {
-            console.log(response.data)
-            _this.databaseList = []
-            response.data.result.forEach(e => {
-              _this.databaseList.push({
-                value: e,
-                label: e
-              })
-            })
-            if (response.data.result.length > 0) {
-              _this.currentDatabaseName = _this.databaseList[0].value
-            }
-          } else {
-            _this.$alert('获取数据库列表失败：没有权限')
-          }
-        }, function (response) {
-          _this.$alert('获取数据库列表失败，请检查网络连接，稍后再试！')
-        })
-    },
-    getDisplayTableSchema (operationId) {
-      let _this = this
-      this.$http.get('/relational/view-table-schema/', {
-        params: {
-          username: this.GLOBAL.username,
-          databaseName: this.currentDatabaseName,
-          tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
-        }
-      }).then(
-        function (response) {
-          if (response.status === 200 && response.data.success) {
-            _this.currentTableName = response.data.result.tableName
-            _this.dataTableSchema = response.data.result.schema
-            if (operationId === 0) {
-              _this.currentFocusOperation = operationId
-              _this.loading = false
-            }
-          } else {
-            if (operationId === 0) {
-              _this.$alert(`获取表信息失败：${response.data.msg}`)
-            }
-            _this.loading = false
-          }
-        }, response => {
-          if (operationId === 0) {
-            _this.$alert('获取表信息失败：网络错误')
-          }
-          _this.loading = false
-        })
-    },
-    getDisplayTable (operationId) {
-      let _this = this
-      this.$http.get('/relational/select/', {
-        params: {
-          username: this.GLOBAL.username,
-          databaseName: this.currentDatabaseName,
-          tableName: this.operationTable[operationId].tableName,
-          instanceId: 0,
-          encrypted: ''
-        }
-      }).then(
-        function (response) {
-          console.log(response)
-          if (response.status === 200 && response.data.success) {
-            console.log(response.data)
-            _this.dataTable = response.data.result
-            if (operationId) {
-              _this.currentFocusOperation = operationId
-              _this.loading = false
-            }
-          } else {
-            _this.$alert(`查看数据失败：${response.data.msg}`)
-            _this.loading = false
-          }
-        }, function (response) {
-          _this.$alert('查看数据失败，请检查网络连接，稍后再试！')
-          _this.loading = false
-        })
-    },
-    delete () {
-      let _this = this
-      let tableName = this.operationTable[1].tableName
-      this.$http.post('/relational/delete/', {
-        username: this.GLOBAL.username,
-        databaseName: this.currentDatabaseName,
-        tableName: tableName,
-        instanceId: 0
-      }).then(response => {
-        _this.loading = false
-        if (response.status === 200 && response.data.success) {
-          console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 全部数据成功`,
-            offset: 200
-          })
-          // _this.operationTable[0].tableName = ''
-        } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 全部数据失败：${response.data.msg}`,
-            offset: 200
-          })
-        }
-      }, response => {
-        _this.loading = false
-        _this.$notify({
-          message: `删除表 ${tableName} 全部数据失败：网络错误`
-        })
-      })
-    },
     dropTable () {
       let _this = this
-      let tableName = this.operationTable[2].tableName
+      let tableName = this.operationTable[this.currentOperationID].tableName
       this.$http.post('/relational/drop-table/', {
         username: this.GLOBAL.username,
         databaseName: this.currentDatabaseName,
         tableName: tableName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
         _this.loading = false
         if (response.status === 200 && response.data.success) {
           console.log(response.data)
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 成功`,
-            offset: 200
+          _this.Relational.getTableList(_this)
+          _this.operationTable.forEach((e) => {
+            e.tableName = ''
           })
+          _this.$alert(`删除表 ${tableName} 成功`)
           // _this.operationTable[0].tableName = ''
         } else {
-          _this.$notify({
-            // title: '保存成功',
-            message: `删除表 ${tableName} 失败：${response.data.msg}`,
-            offset: 200
-          })
+          _this.$alert(`删除表 ${tableName} 失败：${response.data.msg}`)
         }
       }, response => {
         _this.loading = false
-        _this.$notify({
-          message: `删除表 ${tableName} 失败：网络错误`
-        })
+        _this.$alert(`删除表 ${tableName} 失败：网络错误`)
       })
     },
-    onClickDeleteDatabase () {
-      this.deleteDatabaseDialogShow = true
+    onClickCreateDatabase () {
+      this.newDatabaseDialogShow = true
     },
-    onDeleteDatabaseSubmit () {
+    onClickNewDatabaseSubmit () {
       let _this = this
-      let databaseName = this.deleteDatabaseName
-      this.deleteDatabaseDialogShow = false
-      this.$http.post('/relational/drop-database/', {
+      let newDatabaseName = this.newDatabaseName
+      console.log(this.newDatabaseName)
+      this.newDatabaseDialogShow = false
+      this.$http.post('/relational/create-database/', {
+        databaseName: newDatabaseName,
         username: this.GLOBAL.username,
-        databaseName: databaseName,
-        instanceId: 0
+        instanceId: this.instanceID
       }).then(response => {
+        console.log(response)
         if (response.status === 200 && response.data.success) {
-          _this.getDatabaseList()
-          _this.$alert('删除数据库成功')
+          // _this.GLOBAL.databaseList.push(newDatabaseName)
+          // _this.databaseList.push({
+          //   value: newDatabaseName,
+          //   label: newDatabaseName
+          // })
+          _this.Relational.getDatabaseList(_this)
+          _this.$alert('创建数据库成功！')
         } else {
-          _this.$alert(`删除数据库失败：${response.data.msg}`)
+          _this.$alert(`创建数据库失败：${response.data.msg}`)
         }
       }, response => {
-        _this.$alert('删除数据库失败：网络错误')
+        _this.$alert('创建数据库失败：网络错误')
       })
     },
-    onExecute (operationId) {
-      console.log(operationId)
-      switch (operationId) {
+    onClickDropDatabase () {
+      this.Relational.dropDatabase(this)
+    },
+    onExecute (operationID) {
+      console.log(operationID)
+      this.currentOperationID = operationID
+      switch (operationID) {
         case 0:
-          // schema
-          this.loading = true
-          this.getDisplayTableSchema(0)
+          // create table
+          this.Relational.createTable(this)
           break
         case 1:
-          // delete data
-          this.loading = true
-          this.delete()
+          // schema
+          // this.loading = true
+          this.Relational.getDisplayTableSchema(this, operationID)
           break
         case 2:
-          // drop table
-          this.loading = true
-          this.dropTable()
+          // delete data
+          // this.loading = true
+          this.Relational.deleteData(this)
           break
         case 3:
+          // drop table
+          // this.loading = true
+          this.dropTable()
+          break
+        case 4:
           // select
-          this.loading = true
-          this.getDisplayTableSchema(3)
-          this.getDisplayTable(3)
+          // this.loading = true
+          this.Relational.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTable(this)
           break
       }
     }
   },
+  watch: {
+    currentDatabaseName: function (val) {
+      this.Relational.getTableList(this)
+      this.operationTable.forEach((e) => {
+        e.tableName = ''
+      })
+    }
+  },
   created () {
-    this.getDatabaseList()
+    this.Relational.getDatabaseList(this, true)
   }
 }
 </script>

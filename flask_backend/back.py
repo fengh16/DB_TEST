@@ -2,6 +2,7 @@
 from flask import Flask, request, make_response
 from flask_cors import *
 import operations as op
+import time
 
 app = Flask(__name__)
 app.debug = True
@@ -158,6 +159,13 @@ existing_files = {
     'table4.sql'
 }
 
+logs = []
+
+tformat='%Y-%m-%d %H:%M:%S'
+def logto(s):
+    logs.insert(0, f'[{time.strftime(tformat, time.localtime(time.time()))}] {s}')
+
+
 def prepare():
     global user_list, user_password_check, global_user_privilege, db_privileges, db
     user_list = operation.get_users_list()
@@ -238,12 +246,14 @@ def change_user():
             'result': '登录成功',
             'usertype': '管理员' if is_admin(username) else '普通用户'
         }
+        logto(f'change to user {username}')
     else:
         response = {
             'success': True,
             'result': '登录失败',
             'usertype': '管理员' if is_admin else '普通用户'
         }
+        logto(f'change user {username} failed: not in user list')
     return make_response(response)
 
 
@@ -259,12 +269,14 @@ def login():
             'result': '登录成功',
             'usertype': '管理员' if is_admin(username) else '普通用户'
         }
+        logto(f'user {username} login')
     else:
         response = {
             'success': True,
             'result': '登录失败',
             'usertype': '管理员' if is_admin else '普通用户'
         }
+        logto(f'user {username} login failed')
     return make_response(response)
 
 
@@ -280,6 +292,7 @@ def authenticate(dbtype):
         'success': auth_success,
         'result': '认证成功' if auth_success else '认证失败'
     }
+    logto(f'user {username} authenticate {auth_success}')
     return make_response(response, 200)
 
 
@@ -292,6 +305,7 @@ def get_user_list(dbtype):
         'success': request_success,
         'result': user_list if request_success else []
     }
+    logto(f'get user list {user_list}')
     print(response)
     return make_response(response, 200)
 
@@ -315,6 +329,7 @@ def get_user_privilege_list(dbtype):
         'success': request_success,
         'result': [global_privilege] if request_success else []
     }
+    logto(f'get user privileges')
     print(response)
     return make_response(response, 200)
 
@@ -359,10 +374,12 @@ def update_user_privilege_list(dbtype):
             username, privilege, dbname = grant
             ins_id = 0
             operation.interface.grant_priv(username, privilege, True, dbname, ins_id)
+            logto(f'grant privilege {privilege} on {dbname} to {user}')
         for revoke in revoke_units:
             username, privilege, dbname = revoke
             ins_id = 0
             operation.interface.revoke_priv(username, privilege, True, dbname, ins_id)
+            logto(f'revoke privilege {privilege} on {dbname} from {user}')
         
         global_user_privilege = new_global_user_privilege
         db_privileges = new_privilege_list[1:] if len(new_privilege_list) > 1 else db_privileges
@@ -391,11 +408,13 @@ def create_database(dbtype):
             'result': '创建成功' if create_success else '创建失败',
             'msg': '' if create_success else '数据库已经存在'
         }
+        logto(f'create database {db_name}')
     else:
         response = {
             'success': False,
             'result': '没有权限'
         }
+        logto(f'fail to create database {db_name}: unauthenticated')
     return make_response(response, 200)
 
 
@@ -411,6 +430,7 @@ def list_database(dbtype):
         'success': request_success,
         'result': db[instance_id]['db_list'] if request_success else []
     }
+    logto(f'get database list')
     return make_response(response, 200)
 
 
@@ -431,12 +451,14 @@ def list_table(dbtype):
             'result': table_list if request_success else [],
             'msg': '' if request_success else '输入参数有误'
         }
+        logto(f'get table list of database {database_name}')
     else:
         response = {
             'success': False,
             'result': [],
             'msg': '没有权限'
         }
+        logto(f'fail to get table list of database {database_name}: unauthenticated')
     return make_response(response, 200)
 
 
@@ -463,11 +485,13 @@ def create_table(dbtype):
             'success': create_success,
             'result': '创建成功' if create_success else '已经存在'
         }
+        logto(f'create table {db_name}.{table_name}')
     else:
         response = {
             'success': False,
             'result': '没有权限'
         }
+        logto(f'fail to create table {db_name}.{table_name}')
     return make_response(response, 200)
 
 
@@ -486,12 +510,14 @@ def view_table_schema(dbtype):
             'result': {},
             'msg': '该数据库不存在'
         }
+        logto(f'fail to get schema of {db_name}.{table_name}: database does not exist')
     elif table_name not in db[instance_id][db_name]:
         response = {
             'success': False,
             'result': {},
             'msg': '该表不存在'
         }
+        logto(f'fail to get schema of {db_name}.{table_name}: table does not exist')
     else:
         print(username, instance_id, db_name)
         request_success = have_table_privilege(username, instance_id, db_name, 'R')
@@ -513,12 +539,14 @@ def view_table_schema(dbtype):
                     } for i, column in enumerate(schema)]
                 }
             }
+            logto(f'get schema of {db_name}.{table_name}')
         else:
             response = {
                 'success': False,
                 'result': {},
                 'msg': '没有权限'
             }
+            logto(f'fail to get schema of {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
 
@@ -540,11 +568,16 @@ def insert(dbtype):
             'success': insert_success,
             'result': '插入成功' if insert_success else '不存在该表'
         }
+        if insert_success:
+            logto(f'insert into {db_name}.{table_name}')
+        else:
+            logto(f'fail to insert into {db_name}.{table_name}: table does not exist')
     else:
         response = {
             'success': False,
             'result': '没有权限'
         }
+        logto(f'fail to insert into {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
 # 12. 更新数据
@@ -565,11 +598,16 @@ def update(dbtype):
             'success': update_success,
             'result': '更新成功' if update_success else '不存在该表'
         }
+        if update_success:
+            logto(f'update {db_name}.{table_name}')
+        else:
+            logto(f'fail to update {db_name}.{table_name}: table does not exist')
     else:
         response = {
             'success': False,
             'result': '没有权限'
         }
+        logto(f'fail to update {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
 
@@ -591,11 +629,16 @@ def delete(dbtype):
             'success': delete_success,
             'result': '删除成功' if delete_success else '不存在该表'
         }
+        if delete_success:
+            logto(f'delete from {db_name}.{table_name}')
+        else:
+            logto(f'fail to delete from {db_name}.{table_name}: table does not exist')
     else:
         response = {
             'success': False,
             'result': '没有权限'
         }
+        logto(f'fail to delete from {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
   elif dbtype=='graph':
@@ -624,13 +667,14 @@ def select(dbtype):
             'result': [],
             'msg': '该数据库不存在'
         }
+        logto(f'fail to get table data {db_name}.{table_name}: database does not exist')
     elif table_name not in db[instance_id][db_name]['table_list']:
         response = {
             'success': False,
             'result': [],
             'msg': '该表不存在'
         }
-
+        logto(f'fail to get table data {db_name}.{table_name}: table does not exist')
     else:
         authed = have_table_privilege(username, instance_id, db_name, 'R')
         if authed:
@@ -641,12 +685,14 @@ def select(dbtype):
                     'success': True,
                     'result': rows
                 }
+                logto(f'get table data {db_name}.{table_name}')
             else:
                 rows = operation.interface.get_table_data(username, db_name, table_name, instance_id, encrypt_method)
                 response = {
                     'success': True,
                     'result': format_table(instance_id, db_name, table_name, rows)
                 }
+                logto(f'get table data {db_name}.{table_name} encrypted using {encrypt_method}')
             # for i, row in enumerate(rows):
             #     if encrypt_method == '':
             #         new_row = {column_name: value for (column_name, value) in row.items()}
@@ -660,6 +706,7 @@ def select(dbtype):
                 'result': [],
                 'msg': '没有权限'
             }
+            logto(f'fail to get table data {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
   elif dbtype=='graph':
@@ -712,17 +759,20 @@ def select_embedding(dbtype):
                 'success': True,
                 'result': table_rows
             }
+            logto(f'get table data {db_name}.{table_name} embedded {embedding}')
             print(response)
         else:
             response = {
                 'success': False,
                 'result': []
             }
+            logto(f'fail to get table data {db_name}.{table_name} embedded {embedding}')
     else:
         response = {
             'success': False,
             'result': []
         }
+        logto(f'fail to get table data {db_name}.{table_name} embedded {embedding}')
     print(response)
     return make_response(response, 200)
 
@@ -742,27 +792,41 @@ def drop_table(dbtype):
             'result': [],
             'msg': '该数据库不存在'
         }
+        logto(f'fail to drop table {db_name}.{table_name}: database does not exist')
     elif table_name not in db[instance_id][db_name]['table_list']:
         response = {
             'success': False,
             'result': [],
             'msg': '该表不存在'
         }
+        logto(f'fail to drop table {db_name}.{table_name}: table does not exist')
     else:
         authed = have_table_privilege(username, instance_id, db_name, 'D')
         if authed:
-            db[instance_id][db_name]['table_list'].remove(table_name)
-            del db[instance_id][db_name][table_name]
-            response = {
-                'success': True,
-                'result': '删除成功'
-            }
+            drop_success = operation.interface.drop_table(username, db_name, table_name, instance_id)
+            if drop_success:
+                db = operation.get_dbs_content('root')
+            
+                response = {
+                    'success': True,
+                    'result': '',
+                    'msg': ''
+                }
+                logto(f'drop table {db_name}.{table_name}')
+            else:
+                response = {
+                    'success': False,
+                    'result': '',
+                    'msg': '格式错误'
+                }
+                logto(f'fail to drop table {db_name}.{table_name}: error occurs')
         else:
             response = {
                 'success': False,
                 'result': '删除失败',
                 'msg': '没有权限'
             }
+            logto(f'fail to drop table {db_name}.{table_name}: unauthenticated')
     return make_response(response, 200)
 
 
@@ -785,12 +849,17 @@ def drop_database(dbtype):
             'result': '删除成功' if drop_success else '删除失败',
             'msg': '' if drop_success else '数据库不存在'
         }
+        if drop_success:
+            logto(f'drop database {db_name}')
+        else:
+            logto(f'fail to drop database {db_name}: database does not exist')
     else:
         response = {
             'success': False,
             'result': '删除失败',
             'msg': '没有权限'
         }
+        logto(f'fail to drop database {db_name}: unauthenticated')
     print(db[instance_id])
     return make_response(response, 200)
 
@@ -815,24 +884,28 @@ def import_data(dbtype):
                     'result': '',
                     'msg': '导入成功'
                 }
+                logto(f'import from {filename} to {db_name}.{table_name}')
             elif filename not in existing_files:
                 response = {
                     'success': False,
                     'result': '',
                     'msg': '文件不存在'
                 }
+                logto(f'fail to import from {filename} to {db_name}.{table_name}: file does not exist')
             else:
                 response = {
                     'success': False,
                     'result': '',
                     'msg': '格式错误'
                 }
+                logto(f'fail to import from {filename} to {db_name}.{table_name}: error occurs')
         else:
             response = {
                 'success': False,
                 'result': '导入失败',
                 'msg': '没有权限'
             }
+            logto(f'fail to import from {filename} to {db_name}.{table_name}: unauthenticated')
         return make_response(response, 200)
 
     elif dbtype=='graph':
@@ -866,18 +939,21 @@ def export_data(dbtype):
                     'result': '',
                     'msg': '导出成功'
                 }
+                logto(f'export from {db_name}.{table_name} to {filename}')
             else:
                 response = {
                     'success': False,
                     'result': '',
                     'msg': '格式错误'
                 }
+                logto(f'fail to export from {db_name}.{table_name} to {filename}: error occurs')
         else:
             response = {
                 'success': False,
                 'result': '导出失败',
                 'msg': '没有权限'
             }
+            logto(f'fail to export from {db_name}.{table_name} to {filename}: authenticated')
         return make_response(response, 200)
 
     elif dbtype=='graph':
@@ -903,12 +979,14 @@ def select_file(dbtype):
             'result': content,
             'msg': ''
         }
+        logto(f'get content of {filename}')
     else:
         response = {
             'success': False,
             'result': '',
             'msg': '文件不存在'
         }
+        logto(f'fail to get content of {filename}: file does not exist')
     return make_response(response, 200)
 
 
@@ -916,13 +994,12 @@ def select_file(dbtype):
 @cross_origin()
 def select_log(dbtype):
     username = request.args.get('username', '')
+    logto(f'select recent logs')
     response = {
         'success': True,
-        'result': [
-            '[2020-11-22 01:09:46] [developer1] drop table industry_table_0_1_1;',
-            '[2020-11-22 01:09:47] [developer1] drop database industry_database_0_1;'
-        ]
+        'result': logs[:10]
     }
+    
     return make_response(response, 200)
 
 
@@ -939,12 +1016,14 @@ def delete_file(dbtype):
             'result': '',
             'msg': '删除成功'
         }
+        logto(f'delete file {filename}')
     else:
         response = {
             'success': False,
             'result': '',
             'msg': '文件不存在'
         }
+        logto(f'fail to delte file {filename}: file does not exist')
     return make_response(response, 200)
 
 
@@ -961,12 +1040,14 @@ def set_password():
             'result': '',
             'msg': '更改成功'
         }
+        logto(f'reset password for user {username}')
     else:
         response = {
             'success': False,
             'result': '',
             'msg': '用户不存在'
         }
+        logto(f'fail to reset password for user {username}: user does not exist')
     return make_response(response, 200)
 
 

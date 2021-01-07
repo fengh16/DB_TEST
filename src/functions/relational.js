@@ -12,7 +12,7 @@ function createTable (_this) {
     if (response.status === 200 && response.data.success) {
       console.log(response.data)
       _this.$alert(`创建表 ${tableName} 成功`)
-      _this.getTableList()
+      getTableList(_this)
       // _this.operationTable[0].tableName = ''
     } else {
       _this.$alert(`创建表 ${tableName} 失败：${response.data.result}`)
@@ -231,6 +231,28 @@ function importDataShell (_this) {
   })
 }
 
+function dropDatabase (_this) {
+  // requires:
+  // _this.currentDatabaseName
+  // _this.instanceID
+  // _this.getDatabaseList()
+  _this.$http.post('/relational/drop-database/', {
+    databaseName: _this.currentDatabaseName,
+    username: _this.GLOBAL.username,
+    instanceId: _this.instanceID
+  }).then(response => {
+    console.log(response)
+    if (response.status === 200 && response.data.success) {
+      getDatabaseList(_this)
+      _this.$alert('删除数据库成功！')
+    } else {
+      _this.$alert(`删除数据库失败：${response.data.msg}`)
+    }
+  }, response => {
+    _this.$alert('删除数据库失败：网络错误')
+  })
+}
+
 function exportDataShell (_this) {
   // requires:
   // _this.operationTable
@@ -269,5 +291,6 @@ export default {
   getDatabaseList,
   deleteData,
   importDataShell,
-  exportDataShell
+  exportDataShell,
+  dropDatabase
 }

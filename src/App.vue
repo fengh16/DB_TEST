@@ -70,7 +70,7 @@
     </el-container>
     <el-dialog title="日志记录" :visible.sync="logTableShow">
       <el-table :data="logs">
-        <el-table-column property="index" label="" width="40px"></el-table-column>
+        <el-table-column property="index" label="序号" width="40px"></el-table-column>
         <el-table-column property="data" label="记录"></el-table-column>
       </el-table>
     </el-dialog>

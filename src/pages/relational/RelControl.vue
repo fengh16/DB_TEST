@@ -154,15 +154,15 @@ export default {
         case 0:
           // 查看表信息
           console.log(this.tableName[operationID])
-          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTableSchema(this, operationID)
           break
         case 1:
           // 查看数据
           console.log(this.tableName[operationID])
           this.encodeMode = ''
-          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTableSchema(this, operationID)
           this.encodeMode = this.encodeList[this.encodeID].encodeMethod
-          this.GLOBAL.getDisplayTable(this)
+          this.Relational.getDisplayTable(this)
           break
       }
     },
@@ -177,7 +177,7 @@ export default {
     }
   },
   created () {
-    this.GLOBAL.getDatabaseList(this, true)
+    this.Relational.getDatabaseList(this, true)
   }
 }
 </script>

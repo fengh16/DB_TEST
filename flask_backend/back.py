@@ -155,7 +155,7 @@ db = {
 }
 
 existing_files = {
-    'nation.txt'
+    'table4.sql'
 }
 
 def prepare():
@@ -586,8 +586,7 @@ def delete(dbtype):
     if authed:
         delete_success = table_name in db[instance_id][db_name]['table_list']
         delete_success = delete_success and operation.interface.delete_data(username, db_name, table_name, instance_id)
-        if delete_success:
-            db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
+        db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
         response = {
             'success': delete_success,
             'result': '删除成功' if delete_success else '不存在该表'
@@ -637,6 +636,7 @@ def select(dbtype):
         if authed:
             if encrypt_method == '':
                 rows = db[instance_id][db_name][table_name]['rows']
+                print(rows)
                 response = {
                     'success': True,
                     'result': rows
@@ -807,8 +807,9 @@ def import_data(dbtype):
         import_method = request.json['method']
         authed = have_table_privilege(username, instance_id, db_name, 'U')
         if authed:
-            import_success = filename in existing_files and operation.interface.import_data(username, db_name, table_name, instance_id, import_method == 'shell')
+            import_success = filename in existing_files and operation.interface.import_data(username, db_name, filename, instance_id, import_method == 'shell')
             if import_success:
+                db[instance_id][db_name][table_name] = operation.refresh_table(username, db_name, table_name, instance_id)
                 response = {
                     'success': True,
                     'result': '',

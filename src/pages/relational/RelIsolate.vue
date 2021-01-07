@@ -178,32 +178,32 @@ export default {
         case 0:
           // 创建表
           console.log(this.tableName[operationID])
-          this.GLOBAL.createTable(this)
+          this.Relational.createTable(this)
           break
         case 1:
           // 查看表信息
           console.log(this.tableName[operationID])
-          this.GLOBAL.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTableSchema(this, operationID)
           break
         case 2:
           // 插入数据
           console.log(this.tableName[operationID])
-          this.GLOBAL.insert(this)
+          this.Relational.insert(this)
           break
         case 3:
           // 更新数据
           console.log(this.tableName[operationID])
-          this.GLOBAL.update(this)
+          this.Relational.update(this)
           break
         case 4:
           // 删除数据
           console.log(this.tableName[operationID])
-          this.GLOBAL.deleteData(this)
+          this.Relational.deleteData(this)
           break
         case 5:
           // 查看数据
-          this.GLOBAL.getDisplayTableSchema(this, operationID)
-          this.GLOBAL.getDisplayTable(this)
+          this.Relational.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTable(this)
           break
       }
     },
@@ -219,14 +219,14 @@ export default {
   },
   watch: {
     instanceID: function (val) {
-      this.GLOBAL.getDatabaseList(this, true)
+      this.Relational.getDatabaseList(this, true)
       this.operationTable.forEach((e) => {
         e.tableName = ''
       })
     }
   },
   created () {
-    this.GLOBAL.getDatabaseList(this, true)
+    this.Relational.getDatabaseList(this, true)
   }
 }
 </script>

@@ -329,7 +329,7 @@ export default {
         case 1:
           // import (import)
           this.currentOperationID = operationID
-          this.GLOBAL.importDataShell(this)
+          this.Relational.importDataShell(this)
           break
         case 2:
           // export (sql)
@@ -340,14 +340,14 @@ export default {
         case 3:
           // export (dump)
           this.currentOperationID = operationID
-          this.GLOBAL.exportDataShell(this)
+          this.Relational.exportDataShell(this)
           // this.filenameDialogShow_3 = true
           break
         case 4:
           // select data
           this.loading = true
-          this.GLOBAL.getDisplayTableSchema(this, operationID)
-          this.GLOBAL.getDisplayTable(this)
+          this.Relational.getDisplayTableSchema(this, operationID)
+          this.Relational.getDisplayTable(this)
           break
         case 5:
           this.currentOperationID = operationID
@@ -364,7 +364,7 @@ export default {
   },
   watch: {
     currentDatabaseName: function (val) {
-      this.GLOBAL.getTableList(this)
+      this.Relational.getTableList(this)
       this.operationTable.forEach((e) => {
         e.tableName = ''
         e.filepath = ''
@@ -372,7 +372,7 @@ export default {
     }
   },
   created () {
-    this.GLOBAL.getDatabaseList(this, true)
+    this.Relational.getDatabaseList(this, true)
   }
 }
 </script>

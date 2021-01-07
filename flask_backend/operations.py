@@ -357,6 +357,10 @@ class Operation(object):
             for _ in range(_schema_len)
         ]
         _tbl_rows = self.interface.get_table_data(user, dbname, tablename, ins_id)
+        # if dbname == 'deve_x':
+        #     print(user, dbname, tablename, ins_id)
+        #     print(_tbl_rows)
+        #     input()
         _rows_len = len(_tbl_rows)
         if _rows_len == 0:
             table['rows'] = []

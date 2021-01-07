@@ -8,6 +8,7 @@ import router from './router'
 import axios from 'axios'
 import qs from 'qs'
 import globalVariable from '@/global_var'
+import RelationalFunctions from '@/functions/relational'
 // import VueResource from 'vue-resource'
 import './css/global.css'
 import Vuex from 'vuex'
@@ -16,6 +17,7 @@ import Vuex from 'vuex'
 
 Vue.config.productionTip = false
 Vue.prototype.GLOBAL = globalVariable
+Vue.prototype.Relational = RelationalFunctions
 
 Vue.use(ElementUI)
 // Vue.use(VueResource)
